@@ -1,8 +1,11 @@
 CACHE MANIFEST
-#ver:4/24/2022, 3:51:58 AM
+#ver:4/24/2022, 9:06:59 PM
 #plugin:5.0.5
 
 CACHE:
+./icons-c75a9472175cc17394ba6428d867fbcf/favicon.ico
+./icons-c75a9472175cc17394ba6428d867fbcf/manifest.json
+./icons-c75a9472175cc17394ba6428d867fbcf/manifest.webapp
 ./128b9faaeeb0c8f342a5.worker.js
 ./static/fonts/RobotoMono-Bold.819f3b2.woff
 ./static/fonts/RobotoMono-Regular.0b6a547.woff
@@ -11,8 +14,8 @@ CACHE:
 ./static/fonts/lato-normal-italic.f28f2d6.woff
 ./static/fonts/lato-normal.27bd77b.woff
 ./static/js/app.07a6585e088d8e83ed3d.js
-./static/js/vendor.ace11d9e74aa85b2aacc.js
-./static/js/manifest.490e912862dceebaed48.js
+./static/js/vendor.aec2231957b49a35b547.js
+./static/js/manifest.c79c77312acd61097c72.js
 ./static/css/app.47b269b827dc35e5dfa294c52132b4db.css
 ./static/landing/abc.png
 ./static/landing/discussion.png
