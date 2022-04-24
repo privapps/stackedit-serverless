@@ -31,7 +31,7 @@
       <div>Export as HTML</div>
       <span>Generate an HTML page from a template.</span>
     </menu-entry>
-    <menu-entry @click.native="exportPdf">
+    <!-- <menu-entry @click.native="exportPdf">
       <icon-download slot="icon"></icon-download>
       <div><div class="menu-entry__label" :class="{'menu-entry__label--warning': !isSponsor}">sponsor</div> Export as PDF</div>
       <span>Produce a PDF from an HTML template.</span>
@@ -40,7 +40,7 @@
       <icon-download slot="icon"></icon-download>
       <div><div class="menu-entry__label" :class="{'menu-entry__label--warning': !isSponsor}">sponsor</div> Export with Pandoc</div>
       <span>Convert to PDF, Word, EPUB...</span>
-    </menu-entry>
+    </menu-entry> -->
   </div>
 </template>
 

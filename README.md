@@ -1,89 +1,38 @@
-# StackEdit
+# StackEdit Serverless
+> A serverless version of [StackEdit](https://github.com/benweet/stackedit)
 
-[![Build Status](https://img.shields.io/travis/benweet/stackedit.svg?style=flat)](https://travis-ci.org/benweet/stackedit) [![NPM version](https://img.shields.io/npm/v/stackedit.svg?style=flat)](https://www.npmjs.org/package/stackedit)
+https://privapps.github.io/stackedit-serverless
 
-> Full-featured, open-source Markdown editor based on PageDown, the Markdown library used by Stack Overflow and the other Stack Exchange sites.
+## Why
+The last update for [stackedit](https://github.com/benweet/stackedit) was March 2021, and lots of PR were in limbo and not merged. I had a strong feeling that this project might not accessible soon since maintaining a website has expenses. Also, there is a StackEditPro around without source code available, which makes me feel the need to have one up and running in case of losing it.
 
-https://stackedit.io/
+## What
+This is a fork of StackEdit v5.14.10 . Since I do not have any funding, this project only keeps the UI part of it and is stripped of the server-side. And due to that, the integration with Google Drive, Github, Gitlab, etc. was not functioning anymore, so I hide those from the menu.
 
-### Ecosystem
+## Benefit 
+* Use it offline 100%
+* Can backup single notes or the entire workspace to a file, encrypt and save to any cloud as you like (Use your encryption software method as you wish). This maximizes privacy and security.
+* Minimum cost since they are all static pages
 
-- [Chrome app](https://chrome.google.com/webstore/detail/iiooodelglhkcpgbajoejffhijaclcdg)
-- NEW! Embed StackEdit in any website with [stackedit.js](https://github.com/benweet/stackedit.js)
-- NEW! [Chrome extension](https://chrome.google.com/webstore/detail/ajehldoplanpchfokmeempkekhnhmoha) that uses stackedit.js
-- [Community](https://community.stackedit.io/)
-
-### Build
-
+## How
+Here are ways you can use it
+1. Use the Github page https://privapps.github.io/stackedit-serverless
+2. Local Web Service e.g. \
 ```bash
-# install dependencies
-npm install
-
-# serve with hot reload at localhost:8080
-npm start
-
-# build for production with minification
-npm run build
-
-# build for production and view the bundle analyzer report
-npm run build --report
+curl -skL https://github.com/privapps/stackedit-serverless/tarball/gh-pages -o ses.tar.gz
+tar xf ses.tar.gz ; cd <folder with docs>
+python3 -m http.server 8010
 ```
+3. Within a Docker container \
+```docker run -it -p 8010:8010 -v /<path>/docs:/html busybox httpd -fp 8010 -h html```
 
-### Deploy with Helm
+## Build
+For some reason, I have difficulty building it. Missing dependencies on Mac ARM, etc. Currently, the source code is built using npm within Alpine 3.14. See GitHub actions.
 
-StackEdit Helm chart allows easy StackEdit deployment to any Kubernetes cluster.
-You can use it to configure deployment with your existing ingress controller and cert-manager.
+## Limitation
+* Due to missing the server-side, integration with third-party applications is stripped.
+* Missing the note search :(
 
-```bash
-# Add the StackEdit Helm repository
-helm repo add stackedit https://benweet.github.io/stackedit-charts/
-
-# Update your local Helm chart repository cache
-helm repo update
-
-# Deploy StackEdit chart to your cluster
-helm install --name stackedit stackedit/stackedit \
-  --set dropboxAppKey=$DROPBOX_API_KEY \
-  --set dropboxAppKeyFull=$DROPBOX_FULL_ACCESS_API_KEY \
-  --set googleClientId=$GOOGLE_CLIENT_ID \
-  --set googleApiKey=$GOOGLE_API_KEY \
-  --set githubClientId=$GITHUB_CLIENT_ID \
-  --set githubClientSecret=$GITHUB_CLIENT_SECRET \
-  --set wordpressClientId=\"$WORDPRESS_CLIENT_ID\" \
-  --set wordpressSecret=$WORDPRESS_CLIENT_SECRET
-```
-
-Later, to upgrade StackEdit to the latest version:
-
-```bash
-helm repo update
-helm upgrade stackedit stackedit/stackedit
-```
-
-If you want to uninstall StackEdit:
-
-```bash
-helm delete --purge stackedit
-```
-
-If you want to use your existing ingress controller and cert-manager issuer:
-
-```bash
-# See https://docs.cert-manager.io/en/latest/tutorials/acme/quick-start/index.html
-helm install --name stackedit stackedit/stackedit \
-  --set dropboxAppKey=$DROPBOX_API_KEY \
-  --set dropboxAppKeyFull=$DROPBOX_FULL_ACCESS_API_KEY \
-  --set googleClientId=$GOOGLE_CLIENT_ID \
-  --set googleApiKey=$GOOGLE_API_KEY \
-  --set githubClientId=$GITHUB_CLIENT_ID \
-  --set githubClientSecret=$GITHUB_CLIENT_SECRET \
-  --set wordpressClientId=\"$WORDPRESS_CLIENT_ID\" \
-  --set wordpressSecret=$WORDPRESS_CLIENT_SECRET \
-  --set ingress.enabled=true \
-  --set ingress.annotations."kubernetes\.io/ingress\.class"=nginx \
-  --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt-prod \
-  --set ingress.hosts[0].host=stackedit.example.com \
-  --set ingress.hosts[0].paths[0]=/ \
-  --set ingress.tls[0].secretName=stackedit-tls \
-  --set ingress.tls[0].hosts[0]=stackedit.example.com
-```
+## Credit
+* [StackEdit](https://github.com/benweet/stackedit)
+* [StackEdit Docker](https://github.com/qdm12/stackedit-docker)

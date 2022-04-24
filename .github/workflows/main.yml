@@ -1,0 +1,58 @@
+name: gh page
+
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: |
+        npm install
+        NODE_ENV=production npm run build
+
+        mkdir output
+        cp -r static output
+        mkdir output/docs
+        cp -r dist output/docs/app
+        cd output/docs
+        mv ../static/oauth2 .
+        mv ../static/sitemap.xml .
+        mv ../static .
+        mv static/landing/index.html .
+
+        cd app
+        touch conf
+        mkdir -p static/css/static
+        cd $_ 
+        cp -r ../../fonts .
+        cd ../../../../oauth2
+        ln -s callback.html callback
+        cd ../../..
+        pwd
+        ls output
+    - uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+        path: gh-pages
+    - name: update repo for github pages
+      shell: bash
+      run: |
+        cd gh-pages/
+        rm -fr *
+        rm .* || echo
+        mv ../output/* .
+        git add -A .
+        git config --local user.email "bot@users.noreply.github.com"
+        git config --local user.name "bot"
+        git commit -m "sync with code $(date +'%F')" && \
+        git push "https://${GITHUB_ACTOR}:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:gh-pages || echo

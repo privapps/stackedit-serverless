@@ -1,6 +1,6 @@
 <template>
   <div class="side-bar__panel side-bar__panel--menu">
-    <div class="side-bar__info">
+    <!-- <div class="side-bar__info">
       <div class="menu-entry menu-entry--info flex flex--row flex--align-center" v-if="loginToken">
         <div class="menu-entry__icon menu-entry__icon--image">
           <user-image :user-id="userId"></user-image>
@@ -65,7 +65,7 @@
       <div>File properties</div>
       <span>Add metadata and configure extensions.</span>
     </menu-entry>
-    <hr>
+    <hr> -->
     <menu-entry @click.native="setPanel('toc')">
       <icon-toc slot="icon"></icon-toc>
       Table of contents
@@ -83,7 +83,7 @@
       <icon-printer slot="icon"></icon-printer>
       Print
     </menu-entry>
-    <hr>
+    <!-- <hr>
     <menu-entry @click.native="badges">
       <icon-seal slot="icon"></icon-seal>
       <div><div class="menu-entry__label menu-entry__label--count">{{badgeCount}}/{{featureCount}}</div> Badges</div>
@@ -103,7 +103,7 @@
       <icon-settings slot="icon"></icon-settings>
       <div>Settings</div>
       <span>Tweak application and keyboard shortcuts.</span>
-    </menu-entry>
+    </menu-entry> -->
     <hr>
     <menu-entry @click.native="setPanel('workspaceBackups')">
       <icon-content-save slot="icon"></icon-content-save>
