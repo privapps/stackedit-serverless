@@ -31,7 +31,7 @@ export default {
         if (workspaceProvider) {
           // Build the url with the current hostname
           const params = workspaceProvider.getWorkspaceParams(sanitizedWorkspace);
-          sanitizedWorkspace.url = utils.addQueryParams('app', params, true);
+          sanitizedWorkspace.url = utils.addQueryParams('', params, true);
           sanitizedWorkspace.locationUrl = workspaceProvider
             .getWorkspaceLocationUrl(sanitizedWorkspace);
           workspacesById[id] = sanitizedWorkspace;

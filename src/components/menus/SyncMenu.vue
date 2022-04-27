@@ -20,7 +20,7 @@
       <div class="side-bar__info" v-else-if="noToken">
         <p>You have to link an account to start syncing files.</p>
       </div>
-      <hr>
+      <!-- <hr> TODO serverless not avaliable
       <div v-for="token in dropboxTokens" :key="token.sub">
         <menu-entry @click.native="openDropbox(token)">
           <icon-provider slot="icon" provider-id="dropbox"></icon-provider>
@@ -90,7 +90,7 @@
       <menu-entry @click.native="addGoogleDriveAccount">
         <icon-provider slot="icon" provider-id="googleDrive"></icon-provider>
         <span>Add Google Drive account</span>
-      </menu-entry>
+      </menu-entry> -->
     </div>
   </div>
 </template>

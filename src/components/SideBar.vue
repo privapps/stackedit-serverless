@@ -15,8 +15,10 @@
       <main-menu v-if="panel === 'menu'"></main-menu>
       <workspaces-menu v-else-if="panel === 'workspaces'"></workspaces-menu>
       <sync-menu v-else-if="panel === 'sync'"></sync-menu>
+      <!-- TODO serverless not avaliable
       <publish-menu v-else-if="panel === 'publish'"></publish-menu>
       <history-menu v-else-if="panel === 'history'"></history-menu>
+      -->
       <export-menu v-else-if="panel === 'export'"></export-menu>
       <import-export-menu v-else-if="panel === 'importExport'"></import-export-menu>
       <workspace-backup-menu v-else-if="panel === 'workspaceBackups'"></workspace-backup-menu>

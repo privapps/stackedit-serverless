@@ -1,6 +1,6 @@
 <template>
   <div class="side-bar__panel side-bar__panel--menu">
-    <!-- <div class="side-bar__info">
+    <div class="side-bar__info">
       <div class="menu-entry menu-entry--info flex flex--row flex--align-center" v-if="loginToken">
         <div class="menu-entry__icon menu-entry__icon--image">
           <user-image :user-id="userId"></user-image>
@@ -34,23 +34,23 @@
         <span><b>{{currentWorkspace.name}}</b> not synced.</span>
       </div>
     </div>
-    <menu-entry v-if="!loginToken" @click.native="signin">
+    <!-- <menu-entry v-if="!loginToken" @click.native="signin">
       <icon-login slot="icon"></icon-login>
       <div>Sign in with Google</div>
       <span>Sync your main workspace and unlock functionalities.</span>
-    </menu-entry>
+    </menu-entry> -->
     <menu-entry @click.native="setPanel('workspaces')">
       <icon-database slot="icon"></icon-database>
       <div><div class="menu-entry__label menu-entry__label--count" v-if="workspaceCount">{{workspaceCount}}</div> Workspaces</div>
       <span>Switch to another workspace.</span>
     </menu-entry>
-    <hr>
+    <!-- <hr> -->
     <menu-entry @click.native="setPanel('sync')">
       <icon-sync slot="icon"></icon-sync>
       <div><div class="menu-entry__label menu-entry__label--count" v-if="syncLocationCount">{{syncLocationCount}}</div> Synchronize</div>
       <span>Sync your files in the Cloud.</span>
     </menu-entry>
-    <menu-entry @click.native="setPanel('publish')">
+    <!-- <menu-entry @click.native="setPanel('publish')">
       <icon-upload slot="icon"></icon-upload>
       <div><div class="menu-entry__label menu-entry__label--count" v-if="publishLocationCount">{{publishLocationCount}}</div>Publish</div>
       <span>Export your files to the web.</span>
@@ -64,8 +64,8 @@
       <icon-view-list slot="icon"></icon-view-list>
       <div>File properties</div>
       <span>Add metadata and configure extensions.</span>
-    </menu-entry>
-    <hr> -->
+    </menu-entry> -->
+    <hr>
     <menu-entry @click.native="setPanel('toc')">
       <icon-toc slot="icon"></icon-toc>
       Table of contents
@@ -83,12 +83,12 @@
       <icon-printer slot="icon"></icon-printer>
       Print
     </menu-entry>
-    <!-- <hr>
+    <!-- <hr> TODO serverless not avaliable
     <menu-entry @click.native="badges">
       <icon-seal slot="icon"></icon-seal>
       <div><div class="menu-entry__label menu-entry__label--count">{{badgeCount}}/{{featureCount}}</div> Badges</div>
       <span>List application features and earned badges.</span>
-    </menu-entry>
+    </menu-entry>  -->
     <menu-entry @click.native="accounts">
       <icon-key slot="icon"></icon-key>
       <div><div class="menu-entry__label menu-entry__label--count">{{accountCount}}</div> Accounts</div>
@@ -103,7 +103,7 @@
       <icon-settings slot="icon"></icon-settings>
       <div>Settings</div>
       <span>Tweak application and keyboard shortcuts.</span>
-    </menu-entry> -->
+    </menu-entry>
     <hr>
     <menu-entry @click.native="setPanel('workspaceBackups')">
       <icon-content-save slot="icon"></icon-content-save>

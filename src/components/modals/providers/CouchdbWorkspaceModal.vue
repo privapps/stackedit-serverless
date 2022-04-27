@@ -35,7 +35,7 @@ export default modalTemplate({
       if (!this.dbUrl) {
         this.setError('dbUrl');
       } else {
-        const url = utils.addQueryParams('app', {
+        const url = utils.addQueryParams('', {
           providerId: 'couchdbWorkspace',
           dbUrl: this.dbUrl,
         }, true);

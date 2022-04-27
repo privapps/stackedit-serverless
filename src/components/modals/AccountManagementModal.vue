@@ -37,7 +37,7 @@
           </div>
         </div>
       </div>
-      <menu-entry @click.native="addBloggerAccount">
+      <!-- <menu-entry @click.native="addBloggerAccount"> TODO serverless not avaliable
         <icon-provider slot="icon" provider-id="blogger"></icon-provider>
         <span>Add Blogger account</span>
       </menu-entry>
@@ -68,7 +68,7 @@
       <menu-entry @click.native="addZendeskAccount">
         <icon-provider slot="icon" provider-id="zendesk"></icon-provider>
         <span>Add Zendesk account</span>
-      </menu-entry>
+      </menu-entry> -->
     </div>
     <div class="modal__button-bar">
       <button class="button button--resolve" @click="config.resolve()">Close</button>

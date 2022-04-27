@@ -58,33 +58,34 @@ export default {
     // Check that browser is online periodically
     const checkOffline = async () => {
       const isBrowserOffline = window.navigator.onLine === false;
-      if (!isBrowserOffline
-        && store.state.lastOfflineCheck + networkTimeout + 5000 < Date.now()
-        && this.isUserActive()
-      ) {
-        store.commit('updateLastOfflineCheck');
-        const script = document.createElement('script');
-        let timeout;
-        try {
-          await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            script.src = `https://apis.google.com/js/api.js?${Date.now()}`;
-            try {
-              document.head.appendChild(script); // This can fail with bad network
-              timeout = setTimeout(reject, networkTimeout);
-            } catch (e) {
-              reject(e);
-            }
-          });
-          isConnectionDown = false;
-        } catch (e) {
-          isConnectionDown = true;
-        } finally {
-          clearTimeout(timeout);
-          document.head.removeChild(script);
-        }
-      }
+    // disable it as leak privacy.
+    //   if (!isBrowserOffline
+    //     && store.state.lastOfflineCheck + networkTimeout + 5000 < Date.now()
+    //     && this.isUserActive()
+    //   ) {
+    //     store.commit('updateLastOfflineCheck');
+    //     const script = document.createElement('script');
+    //     let timeout;
+    //     try {
+    //       await new Promise((resolve, reject) => {
+    //         script.onload = resolve;
+    //         script.onerror = reject;
+    //         script.src = `https://apis.google.com/js/api.js?${Date.now()}`;
+    //         try {
+    //           document.head.appendChild(script); // This can fail with bad network
+    //           timeout = setTimeout(reject, networkTimeout);
+    //         } catch (e) {
+    //           reject(e);
+    //         }
+    //       });
+    //       isConnectionDown = false;
+    //     } catch (e) {
+    //       isConnectionDown = true;
+    //     } finally {
+    //       clearTimeout(timeout);
+    //       document.head.removeChild(script);
+    //     }
+    //   }
       const offline = isBrowserOffline || isConnectionDown;
       if (store.state.offline !== offline) {
         store.commit('setOffline', offline);

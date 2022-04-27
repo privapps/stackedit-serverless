@@ -17,7 +17,7 @@
       <icon-provider slot="icon" provider-id="couchdbWorkspace"></icon-provider>
       <span>Add a <b>CouchDB</b> workspace</span>
     </menu-entry>
-    <menu-entry @click.native="addGithubWorkspace">
+    <!-- <menu-entry @click.native="addGithubWorkspace">
       <icon-provider slot="icon" provider-id="githubWorkspace"></icon-provider>
       <span>Add a <b>GitHub</b> workspace</span>
     </menu-entry>
@@ -28,7 +28,7 @@
     <menu-entry @click.native="addGoogleDriveWorkspace">
       <icon-provider slot="icon" provider-id="googleDriveWorkspace"></icon-provider>
       <span>Add a <b>Google Drive</b> workspace</span>
-    </menu-entry>
+    </menu-entry> -->
   </div>
 </template>
 
