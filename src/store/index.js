@@ -1,4 +1,3 @@
-import createLogger from 'vuex/dist/logger';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import utils from '../services/utils';

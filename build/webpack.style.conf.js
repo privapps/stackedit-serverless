@@ -5,8 +5,7 @@ var utils = require('./utils')
 var config = require('../config')
 var vueLoaderConfig = require('./vue-loader.conf')
 var StylelintPlugin = require('stylelint-webpack-plugin')
-var ExtractTextPlugin = require('extract-text-webpack-plugin')
-var OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
+var MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 function resolve (dir) {
   return path.join(__dirname, '..', dir)
@@ -16,6 +15,7 @@ module.exports = {
   entry: {
     style: './src/styles/'
   },
+  mode: 'production',
   module: {
     rules: [{
       test: /\.(ttf|eot|otf|woff2?)(\?.*)?$/,
@@ -34,23 +34,17 @@ module.exports = {
     filename: '[name].js',
     publicPath: config.build.assetsPublicPath
   },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      // Use webpack's built-in TerserPlugin for minification
+      '...',
+    ],
+  },
   plugins: [
-    new webpack.optimize.UglifyJsPlugin({
-      compress: {
-        warnings: false
-      },
-      sourceMap: true
-    }),
     // extract css into its own file
-    new ExtractTextPlugin({
+    new MiniCssExtractPlugin({
       filename: '[name].css',
-    }),
-    // Compress extracted CSS. We are using this plugin so that possible
-    // duplicated CSS from different components can be deduped.
-    new OptimizeCSSPlugin({
-      cssProcessorOptions: {
-        safe: true
-      }
     }),
   ]
 }

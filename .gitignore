@@ -8,3 +8,4 @@ npm-debug.log*
 stackedit_v4
 chrome-app/*.zip
 /test/unit/coverage/
+/output

@@ -27,6 +27,12 @@ python3 -m http.server 8010
 ```docker run -it -p 8010:8010 -v /<path>/docs:/html busybox httpd -fp 8010 -h html```
 
 ## Build
+**Requirements:**
+- Node.js >= 20.x
+- npm >= 9.x
+
+The project now uses modern dependencies and build tools. See the updated GitHub Actions workflow for reference.
+
 For some reason, I have difficulty building it. Missing dependencies on Mac ARM, etc. Currently, the source code is built using npm within Alpine 3.14. See GitHub actions.
 
 ## Limitation
