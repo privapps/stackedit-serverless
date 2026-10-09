@@ -48,7 +48,7 @@ const inlineBaseRules2 = [
   'balance_pairs',
   'strikethrough',
   'emphasis',
-  'text_collapse',
+  'fragments_join',
 ];
 
 extensionSvc.onGetOptions((options, properties) => Object
@@ -77,8 +77,8 @@ extensionSvc.onInitConverter(0, (markdown, options) => {
   const inlineRules = inlineBaseRules.slice();
   const inlineRules2 = inlineBaseRules2.slice();
   if (!options.del) {
-    inlineRules.splice(blockRules.indexOf('strikethrough'), 1);
-    inlineRules2.splice(blockRules.indexOf('strikethrough'), 1);
+    inlineRules.splice(inlineRules.indexOf('strikethrough'), 1);
+    inlineRules2.splice(inlineRules2.indexOf('strikethrough'), 1);
   }
   markdown.inline.ruler.enable(inlineRules);
   markdown.inline.ruler2.enable(inlineRules2);

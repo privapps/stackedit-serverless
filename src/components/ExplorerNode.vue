@@ -38,23 +38,38 @@ export default {
       return `${(this.depth + 1) * 15}px`;
     },
     isSelected() {
-      return store.getters['explorer/selectedNode'] === this.node;
+      return store.state.explorer.selectedId === this.node.item.id;
     },
     isEditing() {
-      return store.getters['explorer/editingNode'] === this.node;
+      return store.state.explorer.editingId === this.node.item.id;
     },
     isDragTarget() {
-      return store.getters['explorer/dragTargetNode'] === this.node;
+      return store.state.explorer.dragTargetId === this.node.item.id;
     },
     isDragTargetFolder() {
-      return store.getters['explorer/dragTargetNodeFolder'] === this.node;
+      const { dragTargetId } = store.state.explorer;
+      if (dragTargetId === 'fake') {
+        return this.node.isRoot;
+      }
+      const dragTargetNode = store.getters['explorer/nodeMap'][dragTargetId];
+      const folderNode = dragTargetNode && (dragTargetNode.isFolder
+        ? dragTargetNode
+        : dragTargetNode.parentNode);
+      return folderNode === this.node;
     },
     isOpen() {
       return store.state.explorer.openNodes[this.node.item.id] || this.node.isRoot;
     },
     newChild() {
-      return store.getters['explorer/newChildNodeParent'] === this.node
-        && store.state.explorer.newChildNode;
+      const { newChildNode } = store.state.explorer;
+      if (newChildNode.isNil) {
+        return false;
+      }
+      const parentNode = newChildNode.item.parentId
+        && store.getters['explorer/nodeMap'][newChildNode.item.parentId];
+      return (parentNode
+        ? parentNode.item.id === this.node.item.id
+        : this.node.isRoot) && newChildNode;
     },
     newChildName: {
       get() {
@@ -200,7 +215,7 @@ export default {
 $item-font-size: 14px;
 
 .explorer-node--drag-target {
-  background-color: rgba(0, 128, 255, 0.2);
+  background-color: rgb(0 128 255 / 20%);
 }
 
 .explorer-node__item {
@@ -213,7 +228,7 @@ $item-font-size: 14px;
   padding-right: 5px;
 
   .explorer-node--selected > & {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgb(0 0 0 / 20%);
 
     .explorer__tree:focus & {
       background-color: #39f;
@@ -235,7 +250,7 @@ $item-font-size: 14px;
 
 .explorer-node--trash,
 .explorer-node--temp {
-  color: rgba(0, 0, 0, 0.5);
+  color: rgb(0 0 0 / 50%);
 }
 
 .explorer-node--folder > .explorer-node__item,

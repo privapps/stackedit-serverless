@@ -304,23 +304,23 @@ export default {
   width: 28px;
   font-weight: 600;
   letter-spacing: -0.025em;
-  color: rgba(0, 0, 0, 0.25);
+  color: rgb(0 0 0 / 25%);
   text-transform: none;
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.25);
+    color: rgb(0 0 0 / 25%);
   }
 }
 
 .find-replace__button--on {
-  color: rgba(0, 0, 0, 0.67);
+  color: rgb(0 0 0 / 67%);
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.67);
+    color: rgb(0 0 0 / 67%);
   }
 }
 
@@ -341,12 +341,12 @@ export default {
   width: 25px;
   height: 25px;
   padding: 2px;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgb(0 0 0 / 50%);
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.75);
+    color: rgb(0 0 0 / 75%);
   }
 }
 

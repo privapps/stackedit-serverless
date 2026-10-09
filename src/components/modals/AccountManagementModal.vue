@@ -267,7 +267,7 @@ $button-size: 30px;
   &:focus,
   &:hover {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgb(0 0 0 / 10%);
   }
 }
 </style>

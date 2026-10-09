@@ -33,7 +33,7 @@
         <button class="navigation-bar__button navigation-bar__button--revision button" @click="setRevisionContent()" v-title="'Close revision'"><icon-close></icon-close></button>
       </div>
     </div>
-    <div class="navigation-bar__inner navigation-bar__inner--edit-pagedownButtons">
+    <div class="navigation-bar__inner navigation-bar__inner--edit-pagedown-buttons">
       <button class="navigation-bar__button button" @click="undo" v-title="'Undo'" :disabled="!canUndo"><icon-undo></icon-undo></button>
       <button class="navigation-bar__button button" @click="redo" v-title="'Redo'" :disabled="!canRedo"><icon-redo></icon-redo></button>
       <div v-for="button in pagedownButtons" :key="button.method">
@@ -278,7 +278,7 @@ export default {
   margin: 0 4px;
 }
 
-.navigation-bar__inner--edit-pagedownButtons {
+.navigation-bar__inner--edit-pagedown-buttons {
   margin-left: 15px;
 
   .navigation-bar__button,
@@ -386,13 +386,13 @@ export default {
   padding: 2px;
   margin-top: 8px;
   opacity: 0.5;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgb(255 255 255 / 20%);
 
   &:active,
   &:focus,
   &:hover {
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgb(255 255 255 / 20%);
   }
 }
 
@@ -418,7 +418,7 @@ export default {
 }
 
 .navigation-bar__title--input,
-.navigation-bar__inner--edit-pagedownButtons {
+.navigation-bar__inner--edit-pagedown-buttons {
   display: none;
 
   .navigation-bar--editor & {

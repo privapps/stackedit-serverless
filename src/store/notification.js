@@ -2,6 +2,8 @@ import providerRegistry from '../services/providers/common/providerRegistry';
 import utils from '../services/utils';
 
 const defaultTimeout = 5000; // 5 sec
+let nextItemId = 0;
+const pendingPromises = new Map();
 
 export default {
   namespaced: true,
@@ -20,30 +22,38 @@ export default {
         other => other.type === item.type && other.content === item.content && item,
       );
       if (existingItem) {
-        return existingItem.promise;
+        return pendingPromises.get(existingItem.id);
       }
 
-      item.promise = new Promise((resolve, reject) => {
-        commit('setItems', [...state.items, item]);
-        const removeItem = () => commit(
-          'setItems',
-          state.items.filter(otherItem => otherItem !== item),
-        );
-        setTimeout(
-          () => removeItem(),
-          item.timeout || defaultTimeout,
-        );
-        item.resolve = (res) => {
-          removeItem();
-          resolve(res);
-        };
-        item.reject = (err) => {
-          removeItem();
-          reject(err);
-        };
+      let resolvePromise;
+      let rejectPromise;
+      const promise = new Promise((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
       });
 
-      return item.promise;
+      const id = ++nextItemId;
+      const removeItem = () => {
+        commit('setItems', state.items.filter(otherItem => otherItem.id !== id));
+        pendingPromises.delete(id);
+      };
+      const notificationItem = {
+        ...item,
+        id,
+        resolve: (res) => {
+          removeItem();
+          resolvePromise(res);
+        },
+        reject: (err) => {
+          removeItem();
+          rejectPromise(err);
+        },
+      };
+      pendingPromises.set(id, promise);
+      commit('setItems', [...state.items, notificationItem]);
+      setTimeout(removeItem, item.timeout || defaultTimeout);
+
+      return promise;
     },
     info({ dispatch }, content) {
       return dispatch('showItem', {

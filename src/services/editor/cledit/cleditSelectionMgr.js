@@ -225,7 +225,7 @@ function SelectionMgr(editor) {
 
       if (childA === childB) {
         // This shouldn't be possible
-        throw module.createError('comparePoints got to case 4 and childA and childB are the same!');
+        throw new Error('comparePoints got to case 4 and childA and childB are the same!');
       }
       n = root.firstChild;
       while (n) {

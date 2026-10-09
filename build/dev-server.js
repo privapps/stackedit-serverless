@@ -1,94 +1,133 @@
-require('./check-versions')()
+const fs = require('node:fs');
+const http = require('node:http');
+const path = require('node:path');
+const webpack = require('webpack');
+const config = require('../config');
 
-var config = require('../config')
-Object.keys(config.dev.env).forEach((key) => {
-  if (!process.env[key]) {
-    process.env[key] = JSON.parse(config.dev.env[key]);
+const compiler = webpack(require('./webpack.dev.conf'));
+const outputRoot = path.resolve(config.build.assetsRoot);
+const staticRoot = path.resolve(__dirname, '../static');
+const staticPrefix = `/${config.dev.assetsSubDirectory}/`;
+const liveReloadPath = '/__webpack_live_reload';
+const reloadClients = new Set();
+const contentTypes = {
+  '.css': 'text/css; charset=utf-8',
+  '.gif': 'image/gif',
+  '.html': 'text/html; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.jpeg': 'image/jpeg',
+  '.jpg': 'image/jpeg',
+  '.js': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.xml': 'application/xml; charset=utf-8',
+};
+
+const server = http.createServer((request, response) => {
+  const requestPath = new URL(request.url || '/', 'http://localhost').pathname;
+  if (requestPath === liveReloadPath) {
+    response.writeHead(200, {
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Content-Type': 'text/event-stream; charset=utf-8',
+    });
+    response.write(': connected\n\n');
+    reloadClients.add(response);
+    request.on('close', () => reloadClients.delete(response));
+    return;
+  }
+
+  const fromStatic = requestPath.startsWith(staticPrefix);
+  let filePath = path.resolve(outputRoot, requestPath.slice(1));
+
+  if (path.relative(outputRoot, filePath).startsWith('..')) {
+    response.writeHead(400);
+    response.end('Bad request');
+    return;
+  }
+
+  // Webpack emits fonts and images under /static too. Prefer those generated
+  // assets before falling back to the repository's static files.
+  if (fromStatic && (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile())) {
+    filePath = path.resolve(staticRoot, requestPath.slice(staticPrefix.length));
+    if (path.relative(staticRoot, filePath).startsWith('..')) {
+      response.writeHead(400);
+      response.end('Bad request');
+      return;
+    }
+  }
+
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    if (fromStatic || path.extname(requestPath)) {
+      response.writeHead(404);
+      response.end('Not found');
+      return;
+    }
+    filePath = config.build.index;
+  }
+
+  if (filePath === config.build.index) {
+    fs.readFile(filePath, 'utf8', (error, html) => {
+      if (error) {
+        console.error(error);
+        response.writeHead(500);
+        response.end('Unable to read the application shell');
+        return;
+      }
+      response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        'Content-Type': contentTypes['.html'],
+      });
+      response.end(html.replace(
+        '</body>',
+        `<script>new EventSource("${liveReloadPath}").onmessage = () => window.location.reload();</script></body>`,
+      ));
+    });
+    return;
+  }
+
+  response.writeHead(200, {
+    'Cache-Control': 'no-store',
+    'Content-Type': contentTypes[path.extname(filePath)] || 'application/octet-stream',
+  });
+  fs.createReadStream(filePath).pipe(response);
+});
+
+const watcher = compiler.watch({}, (error, stats) => {
+  if (error) {
+    console.error(error);
+  } else if (stats.hasErrors()) {
+    console.error(stats.toString({ colors: true, all: false, errors: true, warnings: true }));
+  } else {
+    console.log(stats.toString({ colors: true, all: false, errors: true, warnings: true }));
+    if (!server.listening) {
+      server.listen(config.dev.port, 'localhost', () => {
+        console.log(`Development server listening at http://localhost:${config.dev.port}`);
+      });
+    } else {
+      for (const client of reloadClients) {
+        client.write('data: reload\n\n');
+      }
+    }
   }
 });
 
-var opn = require('opn')
-var path = require('path')
-var express = require('express')
-var webpack = require('webpack')
-var proxyMiddleware = require('http-proxy-middleware')
-var webpackConfig = require('./webpack.dev.conf')
-
-// default port where dev server listens for incoming traffic
-var port = process.env.PORT || config.dev.port
-// automatically open browser, if not set will be false
-var autoOpenBrowser = !!config.dev.autoOpenBrowser
-// Define HTTP proxies to your custom API backend
-// https://github.com/chimurai/http-proxy-middleware
-var proxyTable = config.dev.proxyTable
-
-var app = express()
-var compiler = webpack(webpackConfig)
-
-// StackEdit custom middlewares
-require('../server')(app);
-
-var devMiddleware = require('webpack-dev-middleware')(compiler, {
-  publicPath: webpackConfig.output.publicPath,
-  quiet: true
-})
-
-var hotMiddleware = require('webpack-hot-middleware')(compiler, {
-  log: () => {}
-})
-// force page reload when html-webpack-plugin template changes
-compiler.plugin('compilation', function (compilation) {
-  compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
-    hotMiddleware.publish({ action: 'reload' })
-    cb()
-  })
-})
-
-// proxy api requests
-Object.keys(proxyTable).forEach(function (context) {
-  var options = proxyTable[context]
-  if (typeof options === 'string') {
-    options = { target: options }
+const shutdown = () => {
+  for (const client of reloadClients) {
+    client.end();
   }
-  app.use(proxyMiddleware(options.filter || context, options))
-})
+  reloadClients.clear();
+  watcher.close(() => {
+    if (server.listening) {
+      server.close();
+    }
+  });
+};
 
-// handle fallback for HTML5 history API
-app.use(require('connect-history-api-fallback')())
-
-// serve webpack bundle output
-app.use(devMiddleware)
-
-// enable hot-reload and state-preserving
-// compilation error display
-app.use(hotMiddleware)
-
-// serve pure static assets
-var staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
-app.use(staticPath, express.static('./static'))
-
-var uri = 'http://localhost:' + port
-
-var _resolve
-var readyPromise = new Promise(resolve => {
-  _resolve = resolve
-})
-
-console.log('> Starting dev server...')
-devMiddleware.waitUntilValid(() => {
-  console.log('> Listening at ' + uri + '\n')
-  // when env is testing, don't need open it
-  if (autoOpenBrowser && process.env.NODE_ENV !== 'testing') {
-    opn(uri)
-  }
-  _resolve()
-})
-
-var server = app.listen(port)
-
-module.exports = {
-  ready: readyPromise,
-  close: () => {
-    server.close()
-  }
-}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

@@ -157,15 +157,14 @@ export default {
     font-variant-ligatures: no-common-ligatures;
     line-height: 1.25;
     white-space: pre-wrap;
-    word-break: break-word;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .code,
   .img,
   .imgref,
   .cl-toc {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgb(0 0 0 / 5%);
   }
 }
 

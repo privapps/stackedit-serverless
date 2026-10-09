@@ -35,8 +35,11 @@ export default {
   font-family: $font-family-monospace;
   font-size: $font-size-monospace;
   font-variant-ligatures: no-common-ligatures;
+  // word-break: break-word (unlike overflow-wrap: break-word elsewhere) also
+  // forces wrapping even though overflow-wrap is explicitly "normal" here;
+  // removing it would change wrapping behavior for long unbroken code tokens.
   word-break: break-word;
-  word-wrap: normal;
+  overflow-wrap: normal;
   height: auto;
   caret-color: #000;
   min-height: 160px;

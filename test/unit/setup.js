@@ -1,5 +1,8 @@
 import Vue from 'vue';
-import './mocks/cryptoMock';
-import './mocks/mutationObserverMock';
+import 'fake-indexeddb/auto';
 
-Vue.config.productionTip = false;
+Vue.configureCompat({ MODE: 2 });
+
+await import('../../src/icons');
+await import('../../src/components/common/vueGlobals');
+await import('../../src/extensions');

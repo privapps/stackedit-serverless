@@ -1,48 +1,37 @@
-var chalk = require('chalk')
-var semver = require('semver')
-var packageConfig = require('../package.json')
-var shell = require('shelljs')
-function exec (cmd) {
-  return require('child_process').execSync(cmd).toString().trim()
+const semver = require('semver');
+const { execSync } = require('child_process');
+const packageConfig = require('../package.json');
+
+function exec(cmd) {
+  return execSync(cmd).toString().trim();
 }
 
-var versionRequirements = [
-  {
-    name: 'node',
-    currentVersion: semver.clean(process.version),
-    versionRequirement: packageConfig.engines.node
-  },
-]
+module.exports = function checkVersions() {
+  const versionRequirements = [
+    {
+      name: 'node',
+      currentVersion: semver.clean(process.version),
+      versionRequirement: packageConfig.engines.node,
+    },
+    {
+      name: 'npm',
+      currentVersion: exec('npm --version'),
+      versionRequirement: packageConfig.engines.npm,
+    },
+  ];
 
-if (shell.which('npm')) {
-  versionRequirements.push({
-    name: 'npm',
-    currentVersion: exec('npm --version'),
-    versionRequirement: packageConfig.engines.npm
-  })
-}
-
-module.exports = function () {
-  var warnings = []
-  for (var i = 0; i < versionRequirements.length; i++) {
-    var mod = versionRequirements[i]
-    if (!semver.satisfies(mod.currentVersion, mod.versionRequirement)) {
-      warnings.push(mod.name + ': ' +
-        chalk.red(mod.currentVersion) + ' should be ' +
-        chalk.green(mod.versionRequirement)
-      )
-    }
-  }
+  const warnings = versionRequirements
+    .filter(mod => !semver.satisfies(mod.currentVersion, mod.versionRequirement))
+    .map(mod => `${mod.name}: ${mod.currentVersion} should be ${mod.versionRequirement}`);
 
   if (warnings.length) {
-    console.log('')
-    console.log(chalk.yellow('To use this template, you must update following to modules:'))
-    console.log()
-    for (var i = 0; i < warnings.length; i++) {
-      var warning = warnings[i]
-      console.log('  ' + warning)
-    }
-    console.log()
-    process.exit(1)
+    console.log('');
+    console.log('To build this project, you must update the following modules:');
+    console.log();
+    warnings.forEach((warning) => {
+      console.log(`  ${warning}`);
+    });
+    console.log();
+    process.exit(1);
   }
-}
+};

@@ -1,58 +1,92 @@
-name: gh page
+name: Build and deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
-  build:
+  verify:
+    name: Verify static app
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: |
-        npm install
-        NODE_ENV=production npm run build
+      - uses: actions/checkout@v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run unit
+      - run: npm run build
+      - run: npm audit --audit-level=low
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run production browser smoke
+        run: npm run browser-smoke
+      - name: Upload verified static artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stackedit-static-site
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
 
-        mkdir output
-        cp -r static output
-        mkdir output/docs
-        cp -r dist output/docs/app
-        cd output/docs
-        mv ../static/oauth2 .
-        mv ../static/sitemap.xml .
-        mv ../static .
-        mv static/landing/index.html .
+  deploy:
+    name: Deploy GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified static artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: stackedit-static-site
+          path: dist
+      - name: Prepare GitHub Pages artifact
+        shell: bash
+        run: |
+          mkdir output
+          cp -r static output
+          mkdir output/docs
+          cp -r dist output/docs/app
+          cd output/docs
+          mv ../static/oauth2 .
+          mv ../static/sitemap.xml .
+          mv ../static .
+          mv static/landing/index.html .
 
-        cd app
-        touch conf
-        mkdir -p static/css/static
-        cd $_ 
-        cp -r ../../fonts .
-        cd ../../../../oauth2
-        ln -s callback.html callback
-        cd ../../..
-        pwd
-        ls output
-    - uses: actions/checkout@v2
-      with:
-        ref: gh-pages
-        path: gh-pages
-    - name: update repo for github pages
-      shell: bash
-      run: |
-        cd gh-pages/
-        rm -fr *
-        rm .* || echo
-        mv ../output/* .
-        git add -A .
-        git config --local user.email "bot@users.noreply.github.com"
-        git config --local user.name "bot"
-        git commit -m "sync with code $(date +'%F')" && \
-        git push "https://${GITHUB_ACTOR}:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:gh-pages || echo
+          cd app
+          touch conf
+          mkdir -p static/css/static
+          cd static/css/static
+          cp -r ../../fonts .
+          cd ../../../../oauth2
+          ln -s callback.html callback
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Publish verified artifact to GitHub Pages
+        shell: bash
+        run: |
+          cd gh-pages
+          git rm -r --ignore-unmatch -- .
+          cp -r ../output/. .
+          git add -A
+          git config --local user.email "bot@users.noreply.github.com"
+          git config --local user.name "bot"
+          if git diff --cached --quiet; then
+            echo "No GitHub Pages changes to deploy."
+            exit 0
+          fi
+          git commit -m "sync with code $(date +'%F')"
+          git push origin HEAD:gh-pages

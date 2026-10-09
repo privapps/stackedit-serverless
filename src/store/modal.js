@@ -1,3 +1,5 @@
+let nextModalId = 0;
+
 export default {
   namespaced: true,
   state: {
@@ -18,6 +20,8 @@ export default {
   actions: {
     async open({ commit, state }, param) {
       const config = typeof param === 'object' ? { ...param } : { type: param };
+      const modalId = ++nextModalId;
+      config.modalId = modalId;
       try {
         return await new Promise((resolve, reject) => {
           config.resolve = resolve;
@@ -25,7 +29,7 @@ export default {
           commit('setStack', [config, ...state.stack]);
         });
       } finally {
-        commit('setStack', state.stack.filter((otherConfig => otherConfig !== config)));
+        commit('setStack', state.stack.filter(otherConfig => otherConfig.modalId !== modalId));
       }
     },
     async hideUntil({ commit }, promise) {

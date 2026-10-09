@@ -6,7 +6,7 @@
     </div>
     <component v-if="currentModalComponent" :is="currentModalComponent"></component>
     <modal-inner v-else aria-label="Dialog">
-      <div class="modal__content" v-html="simpleModal.contentHtml(config)"></div>
+      <div class="modal__content" v-html="modalContent"></div>
       <div class="modal__button-bar">
         <button class="button" v-if="simpleModal.rejectText" @click="config.reject()">{{simpleModal.rejectText}}</button>
         <button class="button button--resolve" v-if="simpleModal.resolveText" @click="config.resolve()">{{simpleModal.resolveText}}</button>
@@ -18,6 +18,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import simpleModals from '../data/simpleModals';
+import htmlSanitizer from '../libs/htmlSanitizer';
 import editorSvc from '../services/editorSvc';
 import syncSvc from '../services/syncSvc';
 import googleHelper from '../services/providers/helpers/googleHelper';
@@ -141,6 +142,9 @@ export default {
     simpleModal() {
       return simpleModals[this.config.type] || {};
     },
+    modalContent() {
+      return htmlSanitizer.sanitizeHtml(this.simpleModal.contentHtml(this.config));
+    },
   },
   methods: {
     async sponsor() {
@@ -210,7 +214,7 @@ export default {
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: rgba(160, 160, 160, 0.5);
+  background-color: rgb(160 160 160 / 50%);
   overflow: auto;
 
   p {
@@ -382,7 +386,7 @@ export default {
   &:focus,
   &:hover {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgb(0 0 0 / 10%);
   }
 }
 
@@ -434,7 +438,7 @@ export default {
 
   &:hover,
   &:focus {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgb(0 0 0 / 5%);
   }
 }
 

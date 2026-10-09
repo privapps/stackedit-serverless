@@ -1,5 +1,4 @@
 import FileSaver from 'file-saver';
-import TemplateWorker from 'worker-loader!./templateWorker.js'; // eslint-disable-line
 import localDbSvc from './localDbSvc';
 import markdownConversionSvc from './markdownConversionSvc';
 import extensionSvc from './extensionSvc';
@@ -34,10 +33,6 @@ function groupHeadings(headings, level = 1) {
   return result;
 }
 
-const containerElt = document.createElement('div');
-containerElt.className = 'hidden-rendering-container';
-document.body.appendChild(containerElt);
-
 export default {
   /**
    * Apply the template to the file content
@@ -54,42 +49,52 @@ export default {
     const parsingCtx = markdownConversionSvc.parseSections(converter, content.text);
     const conversionCtx = markdownConversionSvc.convert(parsingCtx);
     const html = conversionCtx.htmlSectionList.map(htmlSanitizer.sanitizeHtml).join('');
+    const containerElt = document.createElement('div');
+    containerElt.className = 'hidden-rendering-container';
     containerElt.innerHTML = html;
-    extensionSvc.sectionPreview(containerElt, options);
+    document.body.appendChild(containerElt);
+    let view;
+    try {
+      await extensionSvc.sectionPreview(containerElt, options);
 
-    // Unwrap tables
-    containerElt.querySelectorAll('.table-wrapper').cl_each((wrapperElt) => {
-      while (wrapperElt.firstChild) {
-        wrapperElt.parentNode.insertBefore(wrapperElt.firstChild, wrapperElt.nextSibling);
-      }
-      wrapperElt.parentNode.removeChild(wrapperElt);
-    });
+      // Unwrap tables
+      containerElt.querySelectorAll('.table-wrapper').cl_each((wrapperElt) => {
+        while (wrapperElt.firstChild) {
+          wrapperElt.parentNode.insertBefore(wrapperElt.firstChild, wrapperElt.nextSibling);
+        }
+        wrapperElt.parentNode.removeChild(wrapperElt);
+      });
 
-    // Make TOC
-    const headings = containerElt.querySelectorAll('h1,h2,h3,h4,h5,h6').cl_map(headingElt => ({
-      title: headingElt.textContent,
-      anchor: headingElt.id,
-      level: parseInt(headingElt.tagName.slice(1), 10),
-      children: [],
-    }));
-    const toc = groupHeadings(headings);
-    const view = {
-      pdf,
-      files: [{
-        name: file.name,
-        content: {
-          text: content.text,
-          properties,
-          yamlProperties: content.properties,
-          html: containerElt.innerHTML,
-          toc,
-        },
-      }],
-    };
-    containerElt.innerHTML = '';
+      // Make TOC
+      const headings = containerElt.querySelectorAll('h1,h2,h3,h4,h5,h6').cl_map(headingElt => ({
+        title: headingElt.textContent,
+        anchor: headingElt.id,
+        level: parseInt(headingElt.tagName.slice(1), 10),
+        children: [],
+      }));
+      const toc = groupHeadings(headings);
+      view = {
+        pdf,
+        files: [{
+          name: file.name,
+          content: {
+            text: content.text,
+            properties,
+            yamlProperties: content.properties,
+            html: containerElt.innerHTML,
+            toc,
+          },
+        }],
+      };
+    } finally {
+      containerElt.remove();
+    }
 
     // Run template conversion in a Worker to prevent attacks from helpers
-    const worker = new TemplateWorker();
+    const worker = new Worker(new URL(
+      /* webpackChunkName: "template-worker" */ './templateWorker.js',
+      import.meta.url,
+    ));
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         worker.terminate();

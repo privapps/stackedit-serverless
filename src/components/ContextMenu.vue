@@ -49,7 +49,7 @@ $padding: 5px;
   background-color: #ebebeb;
   border-radius: $padding;
   padding: $padding 0;
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.16), 0 3px 10px 1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 10px rgb(0 0 0 / 16%), 0 3px 10px 1px rgb(0 0 0 / 12%);
 }
 
 .context-menu__item {

@@ -4,7 +4,7 @@ import store from '../../../../src/store';
 import workspaceSvc from '../../../../src/services/workspaceSvc';
 import specUtils from '../specUtils';
 
-const mount = () => shallowMount(Explorer, { store });
+const mount = () => specUtils.shallowMount(Explorer);
 const select = (id) => {
   store.commit('explorer/setSelectedId', id);
   expect(store.getters['explorer/selectedNode'].item.id).toEqual(id);

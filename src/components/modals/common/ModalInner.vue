@@ -28,7 +28,7 @@ export default {
   position: absolute;
   top: 8px;
   right: 8px;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgb(0 0 0 / 50%);
   width: 32px;
   height: 32px;
   padding: 2px;
@@ -36,7 +36,7 @@ export default {
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.67);
+    color: rgb(0 0 0 / 67%);
   }
 }
 </style>

@@ -30,6 +30,7 @@
 <script>
 import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
 import editorSvc from '../../services/editorSvc';
+import htmlSanitizer from '../../libs/htmlSanitizer';
 import animationSvc from '../../services/animationSvc';
 import markdownConversionSvc from '../../services/markdownConversionSvc';
 import StickyComment from './StickyComment';
@@ -56,7 +57,9 @@ export default {
       'constants',
     ]),
     text() {
-      return markdownConversionSvc.highlight(this.currentDiscussion.text);
+      return htmlSanitizer.sanitizeHtml(
+        markdownConversionSvc.highlight(this.currentDiscussion.text),
+      );
     },
     showNext() {
       return this.nextDiscussionId && this.nextDiscussionId !== this.currentDiscussionId;
@@ -143,12 +146,12 @@ export default {
   height: 28px;
   padding: 2px;
   flex: none;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgb(0 0 0 / 50%);
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.75);
+    color: rgb(0 0 0 / 75%);
   }
 }
 

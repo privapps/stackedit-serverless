@@ -26,7 +26,7 @@ beforeEach(() => {
 
 export default {
   async checkToggler(Component, toggler, checker, featureId) {
-    const wrapper = shallowMount(Component, { store });
+    const wrapper = this.shallowMount(Component);
     const valueBefore = checker();
     toggler(wrapper);
     const valueAfter = checker();
@@ -53,6 +53,16 @@ export default {
     await new Promise(resolve => setTimeout(resolve, 1));
     expect(store.getters['data/allBadges'].filter(badge => badge.featureId === featureId)[0]).toMatchObject({
       isEarned,
+    });
+  },
+  shallowMount(Component, options = {}) {
+    const plugins = options.global && options.global.plugins || [];
+    return shallowMount(Component, {
+      ...options,
+      global: {
+        ...options.global,
+        plugins: [...plugins, store],
+      },
     });
   },
 };

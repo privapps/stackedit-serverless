@@ -68,7 +68,7 @@ class Connection {
     }
 
     // Open transaction in read/write will prevent conflict with other tabs
-    const tx = this.db.transaction(this.db.objectStoreNames, 'readwrite');
+    const tx = this.db.transaction(Array.from(this.db.objectStoreNames), 'readwrite');
     tx.onerror = onError;
 
     return onTx(tx);
@@ -237,7 +237,7 @@ const localDbSvc = {
       // Store object has changed
       if (this.hashMap[storeItem.type][storeItem.id] !== storeItem.hash) {
         const item = {
-          ...storeItem,
+          ...utils.deepCopy(storeItem),
           tx: incrementedTx,
         };
         dbStore.put(item);

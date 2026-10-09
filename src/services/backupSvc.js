@@ -15,7 +15,7 @@ export default {
     };
 
     // Parse JSON value
-    const parsedValue = JSON.parse(jsonValue);
+    const parsedValue = JSON.parse(jsonValue.replace(/^\uFEFF/, ''));
     Object.entries(parsedValue).forEach(([id, value]) => {
       if (value) {
         const v4Match = id.match(/^file\.([^.]+)\.([^.]+)$/);

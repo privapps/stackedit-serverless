@@ -1,8 +1,8 @@
-$font-family-main: Lato, 'Helvetica Neue', Helvetica, sans-serif;
-$font-family-monospace: 'Roboto Mono', 'Lucida Sans Typewriter', 'Lucida Console', monaco, Courrier, monospace;
-$body-color-light: rgba(0, 0, 0, 0.75);
-$body-color-dark: rgba(255, 255, 255, 0.75);
-$code-bg: rgba(0, 0, 0, 0.05);
+$font-family-main: lato, 'Helvetica Neue', helvetica, sans-serif;
+$font-family-monospace: 'Roboto Mono', 'Lucida Sans Typewriter', 'Lucida Console', monaco, courrier, monospace;
+$body-color-light: rgb(0 0 0 / 75%);
+$body-color-dark: rgb(255 255 255 / 75%);
+$code-bg: rgb(0 0 0 / 5%);
 $line-height-base: 1.67;
 $line-height-title: 1.33;
 $font-size-monospace: 0.85em;
@@ -13,24 +13,24 @@ $code-border-radius: 3px;
 $link-color: #0c93e4;
 $error-color: #f31;
 $border-radius-base: 3px;
-$hr-color: rgba(128, 128, 128, 0.33);
+$hr-color: rgb(128 128 128 / 33%);
 $navbar-bg: #2c2c2c;
 $navbar-color: mix($navbar-bg, #fff, 33%);
 $navbar-hover-color: #fff;
-$navbar-hover-background: rgba(255, 255, 255, 0.1);
+$navbar-hover-background: rgb(255 255 255 / 10%);
 
 $editor-background-light: #fff;
 $editor-background-dark: #1e1e1e;
 
-$editor-color-light: rgba(0, 0, 0, 0.8);
+$editor-color-light: rgb(0 0 0 / 80%);
 $editor-color-light-low: #000;
-$editor-color-light-high: rgba(0, 0, 0, 0.28);
-$editor-color-light-blockquote: rgba(0, 0, 0, 0.48);
+$editor-color-light-high: rgb(0 0 0 / 28%);
+$editor-color-light-blockquote: rgb(0 0 0 / 48%);
 
-$editor-color-dark: rgba(255, 255, 255, 0.8);
+$editor-color-dark: rgb(255 255 255 / 80%);
 $editor-color-dark-low: #fff;
-$editor-color-dark-high: rgba(255, 255, 255, 0.28);
-$editor-color-dark-blockquote: rgba(255, 255, 255, 0.48);
+$editor-color-dark-high: rgb(255 255 255 / 28%);
+$editor-color-dark-blockquote: rgb(255 255 255 / 48%);
 
 $editor-font-weight-base: 400;
 $editor-font-weight-bold: 600;

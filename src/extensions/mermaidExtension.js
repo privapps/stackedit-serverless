@@ -1,4 +1,4 @@
-import 'mermaid';
+import mermaid from 'mermaid';
 import extensionSvc from '../services/extensionSvc';
 import utils from '../services/utils';
 
@@ -6,6 +6,7 @@ const config = {
   logLevel: 5,
   startOnLoad: false,
   arrowMarkerAbsolute: false,
+  securityLevel: 'strict',
   theme: 'neutral',
   flowchart: {
     htmlLabels: true,
@@ -39,27 +40,32 @@ const config = {
   },
 };
 
-const containerElt = document.createElement('div');
-containerElt.className = 'hidden-rendering-container';
-document.body.appendChild(containerElt);
-
 let init = () => {
-  window.mermaid.initialize(config);
+  mermaid.initialize(config);
   init = () => {};
 };
 
-const render = (elt) => {
+const render = async (elt) => {
+  const containerElt = document.createElement('div');
+  containerElt.className = 'hidden-rendering-container';
+  document.body.appendChild(containerElt);
   try {
     init();
     const svgId = `mermaid-svg-${utils.uid()}`;
-    window.mermaid.mermaidAPI.render(svgId, elt.textContent, () => {
-      while (elt.firstChild) {
-        elt.removeChild(elt.lastChild);
-      }
-      elt.appendChild(containerElt.querySelector(`#${svgId}`));
-    }, containerElt);
+    const { svg, bindFunctions } = await mermaid.render(svgId, elt.textContent, containerElt);
+    containerElt.innerHTML = svg;
+    const svgElt = containerElt.querySelector(`#${svgId}`);
+    while (elt.firstChild) {
+      elt.removeChild(elt.lastChild);
+    }
+    elt.appendChild(svgElt);
+    if (bindFunctions) {
+      bindFunctions(elt);
+    }
   } catch (e) {
     console.error(e); // eslint-disable-line no-console
+  } finally {
+    containerElt.remove();
   }
 };
 
@@ -67,7 +73,7 @@ extensionSvc.onGetOptions((options, properties) => {
   options.mermaid = properties.extensions.mermaid.enabled;
 });
 
-extensionSvc.onSectionPreview((elt) => {
-  elt.querySelectorAll('.prism.language-mermaid')
-    .cl_each(diagramElt => render(diagramElt.parentNode));
-});
+extensionSvc.onSectionPreview(elt => Promise.all(
+  Array.from(elt.querySelectorAll('.prism.language-mermaid'))
+    .map(diagramElt => render(diagramElt.parentNode)),
+));

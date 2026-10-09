@@ -44,46 +44,46 @@ export default {
 }
 
 .icon-provider--stackedit {
-  background-image: url(../assets/iconStackedit.svg);
+  background-image: url("../assets/iconStackedit.svg");
 }
 
 .icon-provider--google-drive {
-  background-image: url(../assets/iconGoogleDrive.svg);
+  background-image: url("../assets/iconGoogleDrive.svg");
 }
 
 .icon-provider--google-photos {
-  background-image: url(../assets/iconGooglePhotos.svg);
+  background-image: url("../assets/iconGooglePhotos.svg");
 }
 
 .icon-provider--github {
-  background-image: url(../assets/iconGithub.svg);
+  background-image: url("../assets/iconGithub.svg");
 }
 
 .icon-provider--gitlab {
-  background-image: url(../assets/iconGitlab.svg);
+  background-image: url("../assets/iconGitlab.svg");
 }
 
 .icon-provider--google {
-  background-image: url(../assets/iconGoogle.svg);
+  background-image: url("../assets/iconGoogle.svg");
 }
 
 .icon-provider--dropbox {
-  background-image: url(../assets/iconDropbox.svg);
+  background-image: url("../assets/iconDropbox.svg");
 }
 
 .icon-provider--wordpress {
-  background-image: url(../assets/iconWordpress.svg);
+  background-image: url("../assets/iconWordpress.svg");
 }
 
 .icon-provider--blogger {
-  background-image: url(../assets/iconBlogger.svg);
+  background-image: url("../assets/iconBlogger.svg");
 }
 
 .icon-provider--zendesk {
-  background-image: url(../assets/iconZendesk.svg);
+  background-image: url("../assets/iconZendesk.svg");
 }
 
 .icon-provider--couchdb {
-  background-image: url(../assets/iconCouchdb.svg);
+  background-image: url("../assets/iconCouchdb.svg");
 }
 </style>

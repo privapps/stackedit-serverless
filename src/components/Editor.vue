@@ -88,8 +88,7 @@ export default {
   font-family: $font-family-main;
   font-variant-ligatures: no-common-ligatures;
   white-space: pre-wrap;
-  word-break: break-word;
-  word-wrap: break-word;
+  overflow-wrap: break-word;
 
   * {
     line-height: $line-height-base;

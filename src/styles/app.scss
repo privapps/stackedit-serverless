@@ -26,12 +26,10 @@ body {
 ::-webkit-scrollbar {
   background-color: transparent;
 
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
   &:horizontal {
     height: 8px;
   }
 
-  /* stylelint-disable-next-line selector-pseudo-class-no-unknown */
   &:vertical {
     width: 8px;
   }
@@ -50,7 +48,7 @@ body {
   outline: none;
 }
 
-input[type=checkbox] {
+input[type="checkbox"] {
   outline: #349be8 auto 5px;
 }
 
@@ -60,7 +58,7 @@ input[type=checkbox] {
   display: block;
 
   * {
-    fill: currentColor;
+    fill: currentcolor;
   }
 }
 
@@ -124,7 +122,7 @@ textarea {
   &:hover,
   .hidden-file:focus + & {
     color: #333;
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgb(0 0 0 / 5%);
     outline: 0;
     text-decoration: none;
   }
@@ -137,7 +135,7 @@ textarea {
     &:focus,
     &:hover {
       color: #ccc;
-      background-color: rgba(255, 255, 255, 0.067);
+      background-color: rgb(255 255 255 / 6.7%);
     }
   }
 
@@ -232,7 +230,7 @@ textarea {
   height: 44px;
   line-height: 36px;
   padding: 4px 4px 0;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgb(0 0 0 / 10%);
   flex: none;
 }
 
@@ -252,7 +250,7 @@ textarea {
   &:focus,
   &:hover {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgb(0 0 0 / 10%);
   }
 }
 
@@ -283,7 +281,7 @@ textarea {
 }
 
 .new-discussion-button {
-  color: rgba(0, 0, 0, 0.33);
+  color: rgb(0 0 0 / 33%);
   position: absolute;
   left: 0;
   padding: 3px 3px 3px 0;
@@ -292,16 +290,16 @@ textarea {
   line-height: 1;
 
   .app--dark & {
-    color: rgba(255, 255, 255, 0.33);
+    color: rgb(255 255 255 / 33%);
   }
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.4);
+    color: rgb(0 0 0 / 40%);
 
     .app--dark & {
-      color: rgba(255, 255, 255, 0.4);
+      color: rgb(255 255 255 / 40%);
     }
   }
 }

@@ -66,7 +66,7 @@ export default {
 }
 
 .button-bar__button {
-  color: rgba(0, 0, 0, 0.2);
+  color: rgb(0 0 0 / 20%);
   display: block;
   width: 26px;
   height: 26px;
@@ -74,35 +74,35 @@ export default {
   margin: 3px 0;
 
   .app--dark & {
-    color: rgba(255, 255, 255, 0.15);
+    color: rgb(255 255 255 / 15%);
   }
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.2);
+    color: rgb(0 0 0 / 20%);
 
     .app--dark & {
-      color: rgba(255, 255, 255, 0.15);
+      color: rgb(255 255 255 / 15%);
       background-color: $navbar-hover-background;
     }
   }
 }
 
 .button-bar__button--on {
-  color: rgba(0, 0, 0, 0.4);
+  color: rgb(0 0 0 / 40%);
 
   .app--dark & {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgb(255 255 255 / 40%);
   }
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.4);
+    color: rgb(0 0 0 / 40%);
 
     .app--dark & {
-      color: rgba(255, 255, 255, 0.4);
+      color: rgb(255 255 255 / 40%);
     }
   }
 }

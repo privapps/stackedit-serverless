@@ -245,14 +245,14 @@ div.comment {
   height: 20px;
   width: 20px;
   padding: 1px;
-  color: rgba(0, 0, 0, 0.33);
+  color: rgb(0 0 0 / 33%);
   margin-right: 5px;
   display: none;
 
   &:active,
   &:focus,
   &:hover {
-    color: rgba(0, 0, 0, 0.5);
+    color: rgb(0 0 0 / 50%);
   }
 
   .comment:hover & {
@@ -325,8 +325,7 @@ div.comment {
   pre {
     font-variant-ligatures: no-common-ligatures;
     white-space: pre-wrap;
-    word-break: break-word;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     caret-color: #000;
   }
 

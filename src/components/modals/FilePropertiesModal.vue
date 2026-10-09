@@ -187,7 +187,7 @@ export default {
           delete properties.extensions;
         }
         this.setYamlProperties(Object.keys(properties).length
-          ? yaml.safeDump(properties)
+          ? yaml.dump(properties)
           : '\n');
       }
     },
@@ -202,7 +202,7 @@ export default {
     setYamlProperties(value) {
       this.yamlProperties = value;
       try {
-        this.properties = yaml.safeLoad(value);
+        this.properties = yaml.load(value);
         this.error = null;
       } catch (e) {
         this.error = e.message;
