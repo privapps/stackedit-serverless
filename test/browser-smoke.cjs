@@ -1590,6 +1590,7 @@ async function main() {
       await savePage.addInitScript(() => {
         const originalSetInterval = window.setInterval;
         window.__holdAutosave = false;
+        window.__abortedContentWrites = 0;
         window.setInterval = (callback, interval, ...args) => {
           if (interval >= 1000 && interval < 1200) {
             window.__runAutosave = callback;
@@ -1602,7 +1603,10 @@ async function main() {
         const originalPut = IDBObjectStore.prototype.put;
         IDBObjectStore.prototype.put = function put(...args) {
           const request = originalPut.apply(this, args);
-          if (window.__abortSave && args[0].type === 'content') this.transaction.abort();
+          if (window.__abortSave && args[0].type === 'content') {
+            window.__abortedContentWrites += 1;
+            this.transaction.abort();
+          }
           return request;
         };
       });
@@ -1640,9 +1644,31 @@ async function main() {
         window.__abortSave = true;
         await window.__runAutosave();
       });
-      await savePage.waitForFunction(() => (
-        document.querySelector('[data-local-save-status]')?.dataset.localSaveStatus === 'error'
-      ));
+      const abortedSaveState = await savePage.evaluate(() => {
+        const store = document.querySelector('#app').__vue_app__._context.provides.store;
+        return {
+          status: store.state.localSaveStatus,
+          error: store.state.localSaveError,
+          abortedContentWrites: window.__abortedContentWrites,
+        };
+      });
+      assert.ok(abortedSaveState.abortedContentWrites > 0,
+        `Forced save failure did not abort a content write: ${JSON.stringify(abortedSaveState)}`);
+      try {
+        await savePage.waitForFunction(() => (
+          document.querySelector('[data-local-save-status]')?.dataset.localSaveStatus === 'error'
+        ), undefined, { timeout: 5_000 });
+      } catch (error) {
+        const saveState = await savePage.evaluate(() => {
+          const store = document.querySelector('#app').__vue_app__._context.provides.store;
+          return {
+            status: store.state.localSaveStatus,
+            error: store.state.localSaveError,
+            abortedContentWrites: window.__abortedContentWrites,
+          };
+        });
+        throw new Error(`Aborted save did not report an error: ${JSON.stringify(saveState)}; ${error.message}`);
+      }
       assert.match(await savePage.locator('.editor__inner').textContent(), /UNSAVED_PUBLIC_EDIT_MARKER/);
       assert.equal(await readSavedText(), originalSavedText,
         'An aborted save preserves the previous database content and the in-memory edit');
