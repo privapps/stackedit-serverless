@@ -1976,6 +1976,7 @@ async function main() {
       'main-legacy-note.md',
     );
     await ensureExplorerVisible(legacyMainPage);
+    await mainLegacyNoteRow.waitFor({ state: 'visible' });
     assert.equal(await legacyMainPage.locator('.explorer-node__item')
       .filter({ hasText: 'Main Archive' }).count(), 1);
     assert.equal(await legacyMainPage.locator('.explorer-node__item')
