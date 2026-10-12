@@ -23,14 +23,6 @@ const zero = {
     shortcuts: false,
   },
   /*
-  ABC Notation extension
-  Render abc-notation code blocks to music sheets
-  See https://abcjs.net/
-  */
-  abc: {
-    enabled: false,
-  },
-  /*
   Katex extension
   Render LaTeX mathematical expressions using:
     $...$ for inline formulas
@@ -95,9 +87,6 @@ export default {
       enabled: true,
     },
     mermaid: {
-      enabled: true,
-    },
-    abc: {
       enabled: true,
     },
   }],

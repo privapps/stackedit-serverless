@@ -179,7 +179,6 @@ function cledit(contentElt, scrollEltOpt, isMarkdown = false) {
     editor.$markers.cl_each((marker) => {
       marker.adjustOffset(diffs);
     });
-
     const sectionList = highlighter.parseSections(newTextContent);
     editor.$trigger('contentChanged', newTextContent, diffs, sectionList);
     if (!ignoreUndo) {

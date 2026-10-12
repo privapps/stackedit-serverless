@@ -18,12 +18,20 @@
       <span v-for="stat in htmlStats" :key="stat.id">
         <span class="stat-panel__value">{{stat.value}}</span> {{stat.name}}
       </span>
+      <span
+        class="stat-panel__save-status"
+        :class="`stat-panel__save-status--${localSaveStatus}`"
+        :title="localSaveError || localSaveLabel"
+        :data-local-save-status="localSaveStatus"
+        role="status"
+        aria-live="polite"
+      >{{localSaveLabel}}</span>
     </div>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import editorSvc from '../services/editorSvc';
 import utils from '../services/utils';
 
@@ -53,9 +61,21 @@ export default {
       new Stat('paragraphs', '\\S.*'),
     ],
   }),
-  computed: mapGetters('layout', [
-    'styles',
-  ]),
+  computed: {
+    ...mapGetters('layout', [
+      'styles',
+    ]),
+    ...mapState(['localSaveStatus', 'localSaveError']),
+    localSaveLabel() {
+      if (this.localSaveStatus === 'saving') {
+        return 'Saving locally…';
+      }
+      if (this.localSaveStatus === 'error') {
+        return 'Local save failed';
+      }
+      return 'Saved locally';
+    },
+  },
   created() {
     editorSvc.$on('sectionList', () => this.computeText());
     editorSvc.$on('selectionRange', () => this.computeText());
@@ -129,5 +149,14 @@ export default {
 .stat-panel__value {
   font-weight: 600;
   margin-left: 5px;
+}
+
+.stat-panel__save-status {
+  display: inline-block;
+  margin-left: 14px;
+}
+
+.stat-panel__save-status--error {
+  color: #ffb3b3;
 }
 </style>

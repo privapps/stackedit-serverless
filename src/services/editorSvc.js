@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import DiffMatchPatch from 'diff-match-patch';
 import Prism from 'prismjs';
-import markdownItPandocRenderer from 'markdown-it-pandoc-renderer';
 import cledit from './editor/cledit';
 import pagedown from '../libs/pagedown';
 import htmlSanitizer from '../libs/htmlSanitizer';
@@ -9,7 +8,6 @@ import markdownConversionSvc from './markdownConversionSvc';
 import markdownGrammarSvc from './markdownGrammarSvc';
 import sectionUtils from './editor/sectionUtils';
 import extensionSvc from './extensionSvc';
-import editorSvcDiscussions from './editor/editorSvcDiscussions';
 import editorSvcUtils from './editor/editorSvcUtils';
 import utils from './utils';
 import store from '../store';
@@ -28,7 +26,7 @@ const allowDebounce = (action, wait) => {
 
 const diffMatchPatch = new DiffMatchPatch();
 let instantPreview = true;
-let tokens;
+let contentId;
 
 class SectionDesc {
   constructor(section, previewElt, tocElt, html) {
@@ -41,7 +39,7 @@ class SectionDesc {
 }
 
 // Use a vue instance as an event bus
-const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils, {
+const editorSvc = Object.assign(new Vue(), editorSvcUtils, {
   // Elements
   editorElt: null,
   previewElt: null,
@@ -63,6 +61,40 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   selectionRange: null,
   previewSelectionRange: null,
   previewSelectionStartOffset: null,
+
+  createClEditor(editorElt) {
+    this.clEditor = cledit(editorElt, editorElt.parentNode, true);
+    this.clEditor.on('contentChanged', (text) => {
+      const content = utils.deepCopy(store.getters['content/current']);
+      store.dispatch('content/patchCurrent', {
+        ...content,
+        text: utils.sanitizeText(text),
+      });
+    });
+  },
+
+  initClEditorInternal(options) {
+    const content = store.getters['content/current'];
+    if (!content) {
+      return;
+    }
+    const contentState = store.getters['contentState/current'];
+    const editorOptions = Object.assign({
+      selectionStart: contentState.selectionStart,
+      selectionEnd: contentState.selectionEnd,
+    }, options);
+    if (contentId !== content.id) {
+      contentId = content.id;
+      editorOptions.content = content.text;
+    }
+    this.clEditor.init(editorOptions);
+  },
+
+  applyContent() {
+    if (this.clEditor) {
+      this.clEditor.setContent(store.getters['content/current'].text, true);
+    }
+  },
 
   /**
    * Initialize the Prism grammar with the options
@@ -114,7 +146,6 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   convert() {
     this.conversionCtx = markdownConversionSvc.convert(this.parsingCtx, this.conversionCtx);
     this.$emit('conversionCtx', this.conversionCtx);
-    ({ tokens } = this.parsingCtx.markdownState);
   },
 
   /**
@@ -292,6 +323,19 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
   }, 100),
 
   /**
+   * Select source text and bring it into view.
+   */
+  selectTextRange(start, end) {
+    if (!this.clEditor) {
+      return false;
+    }
+    this.clEditor.focus();
+    this.clEditor.selectionMgr.setSelectionStartEnd(start, end);
+    this.clEditor.selectionMgr.updateCursorCoordinates(true);
+    return true;
+  },
+
+  /**
    * Report selection from the preview to the editor.
    */
   saveSelection: allowDebounce(() => {
@@ -331,13 +375,6 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       editorSvc.$emit('previewSelectionRange', editorSvc.previewSelectionRange);
     }
   }, 50),
-
-  /**
-   * Returns the pandoc AST generated from the file tokens and the converter options
-   */
-  getPandocAst() {
-    return tokens && markdownItPandocRenderer(tokens, this.converter.options);
-  },
 
   /**
    * Pass the elements to the store and initialize the editor.
@@ -563,7 +600,7 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
         if (initClEditor) {
           this.initClEditor();
         }
-        // Apply potential text and discussion changes
+        // Apply content loaded or changed outside the editor.
         this.applyContent();
       }, {
         immediate: true,
@@ -583,7 +620,6 @@ const editorSvc = Object.assign(new Vue(), editorSvcDiscussions, editorSvcUtils,
       () => this.measureSectionDimensions(false, true, true),
     );
 
-    this.initHighlighters();
     this.$emit('inited');
   },
 });

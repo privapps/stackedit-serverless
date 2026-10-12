@@ -1,0 +1,68 @@
+import emptyContent from '../data/empties/emptyContent';
+import utils from './utils';
+
+const dataExtractor = /<!--stackedit_data:([A-Za-z0-9+/=\s]+)-->\s*$/;
+
+export default {
+  /**
+   * Serialize a document as Markdown with its supported StackEdit metadata.
+   */
+  serializeContent(content) {
+    let result = content.text;
+    const data = {};
+    if (content.properties.length > 1) {
+      data.properties = content.properties;
+    }
+    if (Object.keys(content.discussions).length) {
+      data.discussions = content.discussions;
+    }
+    if (Object.keys(content.comments).length) {
+      data.comments = content.comments;
+    }
+    if (content.history && content.history.length) {
+      data.history = content.history;
+    }
+    if (Object.keys(data).length) {
+      const serializedData = utils.encodeBase64(JSON.stringify(data)).replace(/(.{50})/g, '$1\n');
+      result += `<!--stackedit_data:\n${serializedData}\n-->`;
+    }
+    return result;
+  },
+
+  /**
+   * Parse Markdown with optional StackEdit metadata. When the trailer is absent,
+   * an existing document can supply the metadata that older exports omitted.
+   */
+  parseContent(serializedContent, id = null, existingContent) {
+    let text = serializedContent;
+    const extractedData = dataExtractor.exec(serializedContent);
+    let result;
+    if (!extractedData) {
+      result = utils.deepCopy(existingContent) || emptyContent(id);
+    } else {
+      result = emptyContent(id);
+      try {
+        const serializedData = extractedData[1].replace(/\s/g, '');
+        const parsedData = JSON.parse(utils.decodeBase64(serializedData));
+        text = text.slice(0, extractedData.index);
+        if (parsedData.properties) {
+          result.properties = utils.sanitizeText(parsedData.properties);
+        }
+        if (parsedData.discussions) {
+          result.discussions = parsedData.discussions;
+        }
+        if (parsedData.comments) {
+          result.comments = parsedData.comments;
+        }
+        result.history = parsedData.history;
+      } catch (error) {
+        // Keep malformed metadata visible as text, matching the legacy parser.
+      }
+    }
+    result.text = utils.sanitizeText(text);
+    if (!result.history) {
+      result.history = [];
+    }
+    return utils.addItemHash(result);
+  },
+};

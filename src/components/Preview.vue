@@ -3,10 +3,6 @@
     <div class="preview__inner-1" @click="onClick" @scroll="onScroll">
       <div class="preview__inner-2" :style="{padding: styles.previewPadding}">
       </div>
-      <div class="gutter" :style="{left: styles.previewGutterLeft + 'px'}">
-        <comment-list v-if="styles.previewGutterWidth"></comment-list>
-        <preview-new-discussion-button v-if="!isCurrentTemp"></preview-new-discussion-button>
-      </div>
     </div>
     <div v-if="!styles.showEditor" class="preview__corner">
       <button class="preview__button button" @click="toggleEditor(true)" v-title="'Edit file'">
@@ -19,24 +15,14 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import CommentList from './gutters/CommentList';
-import PreviewNewDiscussionButton from './gutters/PreviewNewDiscussionButton';
-import store from '../store';
 
 const appUri = `${window.location.protocol}//${window.location.host}`;
 
 export default {
-  components: {
-    CommentList,
-    PreviewNewDiscussionButton,
-  },
   data: () => ({
     previewTop: true,
   }),
   computed: {
-    ...mapGetters('file', [
-      'isCurrentTemp',
-    ]),
     ...mapGetters('layout', [
       'styles',
     ]),
@@ -61,46 +47,6 @@ export default {
     onScroll(evt) {
       this.previewTop = evt.target.scrollTop < 10;
     },
-  },
-  mounted() {
-    const previewElt = this.$el.querySelector('.preview__inner-2');
-    const onDiscussionEvt = cb => (evt) => {
-      let elt = evt.target;
-      while (elt && elt !== previewElt) {
-        if (elt.discussionId) {
-          cb(elt.discussionId);
-          return;
-        }
-        elt = elt.parentNode;
-      }
-    };
-
-    const classToggler = toggle => (discussionId) => {
-      previewElt.getElementsByClassName(`discussion-preview-highlighting--${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('discussion-preview-highlighting--hover', toggle));
-      document.getElementsByClassName(`comment--discussion-${discussionId}`)
-        .cl_each(elt => elt.classList.toggle('comment--hover', toggle));
-    };
-
-    previewElt.addEventListener('mouseover', onDiscussionEvt(classToggler(true)));
-    previewElt.addEventListener('mouseout', onDiscussionEvt(classToggler(false)));
-    previewElt.addEventListener('click', onDiscussionEvt((discussionId) => {
-      store.commit('discussion/setCurrentDiscussionId', discussionId);
-    }));
-
-    this.$watch(
-      () => store.state.discussion.currentDiscussionId,
-      (discussionId, oldDiscussionId) => {
-        if (oldDiscussionId) {
-          previewElt.querySelectorAll(`.discussion-preview-highlighting--${oldDiscussionId}`)
-            .cl_each(elt => elt.classList.remove('discussion-preview-highlighting--selected'));
-        }
-        if (discussionId) {
-          previewElt.querySelectorAll(`.discussion-preview-highlighting--${discussionId}`)
-            .cl_each(elt => elt.classList.add('discussion-preview-highlighting--selected'));
-        }
-      },
-    );
   },
 };
 </script>

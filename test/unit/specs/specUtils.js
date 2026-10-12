@@ -1,4 +1,4 @@
-import { shallowMount } from '@vue/test-utils';
+import { enableAutoUnmount, shallowMount } from '@vue/test-utils';
 import store from '../../../src/store';
 import utils from '../../../src/services/utils';
 import '../../../src/icons';
@@ -19,19 +19,21 @@ const deepAssign = (target, origin) => {
 
 const freshState = clone(store.state);
 
+enableAutoUnmount(afterEach);
+
 beforeEach(() => {
   // Restore store state before each test
   deepAssign(store.state, clone(freshState));
 });
 
 export default {
-  async checkToggler(Component, toggler, checker, featureId) {
+  async checkToggler(Component, toggler, checker) {
     const wrapper = this.shallowMount(Component);
     const valueBefore = checker();
     toggler(wrapper);
     const valueAfter = checker();
     expect(valueAfter).toEqual(!valueBefore);
-    await this.expectBadge(featureId);
+    expect(store.state.data.lsItemsById.badgeCreations).toBeUndefined();
   },
   async resolveModal(type) {
     const config = store.getters['modal/config'];
@@ -48,12 +50,6 @@ export default {
     expect(item).toBeTruthy();
     store.state.contextMenu.resolve(item);
     await new Promise(resolve => setTimeout(resolve, 1));
-  },
-  async expectBadge(featureId, isEarned = true) {
-    await new Promise(resolve => setTimeout(resolve, 1));
-    expect(store.getters['data/allBadges'].filter(badge => badge.featureId === featureId)[0]).toMatchObject({
-      isEarned,
-    });
   },
   shallowMount(Component, options = {}) {
     const plugins = options.global && options.global.plugins || [];

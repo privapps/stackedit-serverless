@@ -59,18 +59,9 @@ jobs:
           mkdir output/docs
           cp -r dist output/docs/app
           cd output/docs
-          mv ../static/oauth2 .
           mv ../static/sitemap.xml .
           mv ../static .
           mv static/landing/index.html .
-
-          cd app
-          touch conf
-          mkdir -p static/css/static
-          cd static/css/static
-          cp -r ../../fonts .
-          cd ../../../../oauth2
-          ln -s callback.html callback
       - uses: actions/checkout@v4
         with:
           ref: gh-pages

@@ -1,8 +1,20 @@
 <template>
   <div class="splash-screen">
     <div class="splash-screen__inner logo-background"></div>
+    <p class="splash-screen__error" role="alert" v-if="error">{{error}}</p>
   </div>
 </template>
+
+<script>
+export default {
+  props: {
+    error: {
+      type: String,
+      default: '',
+    },
+  },
+};
+</script>
 
 <style lang="scss">
 .splash-screen {
@@ -18,5 +30,13 @@
   margin: 0 auto;
   max-width: 600px;
   height: 100%;
+}
+
+.splash-screen__error {
+  position: absolute;
+  bottom: 25px;
+  left: 25px;
+  right: 25px;
+  text-align: center;
 }
 </style>

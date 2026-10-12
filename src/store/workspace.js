@@ -1,6 +1,3 @@
-import utils from '../services/utils';
-import providerRegistry from '../services/providers/common/providerRegistry';
-
 export default {
   namespaced: true,
   state: {
@@ -18,75 +15,38 @@ export default {
   getters: {
     workspacesById: (state, getters, rootState, rootGetters) => {
       const workspacesById = {};
-      const mainWorkspaceToken = rootGetters['workspace/mainWorkspaceToken'];
       Object.entries(rootGetters['data/workspaces']).forEach(([id, workspace]) => {
         const sanitizedWorkspace = {
           id,
-          providerId: 'googleDriveAppData',
-          sub: mainWorkspaceToken && mainWorkspaceToken.sub,
           ...workspace,
         };
-        // Filter workspaces that don't have a provider
-        const workspaceProvider = providerRegistry.providersById[sanitizedWorkspace.providerId];
-        if (workspaceProvider) {
-          // Build the url with the current hostname
-          const params = workspaceProvider.getWorkspaceParams(sanitizedWorkspace);
-          sanitizedWorkspace.url = utils.addQueryParams('', params, true);
-          sanitizedWorkspace.locationUrl = workspaceProvider
-            .getWorkspaceLocationUrl(sanitizedWorkspace);
-          workspacesById[id] = sanitizedWorkspace;
-        }
+        sanitizedWorkspace.url = `${window.location.origin}${window.location.pathname}` +
+          `#workspaceId=${encodeURIComponent(id)}`;
+        workspacesById[id] = sanitizedWorkspace;
       });
       return workspacesById;
     },
     mainWorkspace: (state, { workspacesById }) => workspacesById.main,
     currentWorkspace: ({ currentWorkspaceId }, { workspacesById, mainWorkspace }) =>
       workspacesById[currentWorkspaceId] || mainWorkspace,
-    currentWorkspaceIsGit: (state, { currentWorkspace }) =>
-      currentWorkspace.providerId === 'githubWorkspace'
-      || currentWorkspace.providerId === 'gitlabWorkspace',
-    currentWorkspaceHasUniquePaths: (state, { currentWorkspace }) =>
-      currentWorkspace.providerId === 'githubWorkspace'
-      || currentWorkspace.providerId === 'gitlabWorkspace',
-    lastSyncActivityKey: (state, { currentWorkspace }) => `${currentWorkspace.id}/lastSyncActivity`,
-    lastFocusKey: (state, { currentWorkspace }) => `${currentWorkspace.id}/lastWindowFocus`,
-    mainWorkspaceToken: (state, getters, rootState, rootGetters) =>
-      utils.someResult(Object.values(rootGetters['data/googleTokensBySub']), (token) => {
-        if (token.isLogin) {
-          return token;
-        }
-        return null;
-      }),
-    syncToken: (state, { currentWorkspace, mainWorkspaceToken }, rootState, rootGetters) => {
+    // Only inspect credential presence to preserve old Trash retention eligibility.
+    // Never expose a token or reconnect the former provider.
+    hasLegacyTrashExemption: (state, { currentWorkspace }, rootState) => {
+      const tokens = rootState.data.lsItemsById.tokens?.data || {};
       switch (currentWorkspace.providerId) {
         case 'googleDriveWorkspace':
-          return rootGetters['data/googleTokensBySub'][currentWorkspace.sub];
+          return !!tokens.google?.[currentWorkspace.sub];
         case 'githubWorkspace':
-          return rootGetters['data/githubTokensBySub'][currentWorkspace.sub];
+          return !!tokens.github?.[currentWorkspace.sub];
         case 'gitlabWorkspace':
-          return rootGetters['data/gitlabTokensBySub'][currentWorkspace.sub];
+          return !!tokens.gitlab?.[currentWorkspace.sub];
         case 'couchdbWorkspace':
-          return rootGetters['data/couchdbTokensBySub'][currentWorkspace.id];
+          return !!tokens.couchdb?.[currentWorkspace.id];
         default:
-          return mainWorkspaceToken;
+          return Object.values(tokens.google || {}).some(token => token?.isLogin);
       }
     },
-    loginType: (state, { currentWorkspace }) => {
-      switch (currentWorkspace.providerId) {
-        case 'googleDriveWorkspace':
-        default:
-          return 'google';
-        case 'githubWorkspace':
-          return 'github';
-        case 'gitlabWorkspace':
-          return 'gitlab';
-      }
-    },
-    loginToken: (state, { loginType, currentWorkspace }, rootState, rootGetters) => {
-      const tokensBySub = rootGetters['data/tokensByType'][loginType];
-      return tokensBySub && tokensBySub[currentWorkspace.sub];
-    },
-    sponsorToken: (state, { mainWorkspaceToken }) => mainWorkspaceToken,
+    lastFocusKey: (state, { currentWorkspace }) => `${currentWorkspace.id}/lastWindowFocus`,
   },
   actions: {
     removeWorkspace: ({ commit, rootGetters }, id) => {
@@ -113,7 +73,6 @@ export default {
             id,
             // Do not store urls
             url: undefined,
-            locationUrl: undefined,
           };
         });
 

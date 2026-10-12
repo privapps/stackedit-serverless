@@ -3,7 +3,23 @@ import ExplorerNode from '../../../../src/components/ExplorerNode';
 import store from '../../../../src/store';
 import workspaceSvc from '../../../../src/services/workspaceSvc';
 import explorerSvc from '../../../../src/services/explorerSvc';
+import localDbSvc from '../../../../src/services/localDbSvc';
 import specUtils from '../specUtils';
+
+const legacyBadgeStorageKey = 'data/badgeCreations';
+let previousLegacyBadgeRecord;
+
+beforeEach(() => {
+  previousLegacyBadgeRecord = localStorage.getItem(legacyBadgeStorageKey);
+});
+
+afterEach(() => {
+  if (previousLegacyBadgeRecord === null) {
+    localStorage.removeItem(legacyBadgeStorageKey);
+  } else {
+    localStorage.setItem(legacyBadgeStorageKey, previousLegacyBadgeRecord);
+  }
+});
 
 const makeFileNode = async () => {
   const file = await workspaceSvc.createFile({}, true);
@@ -56,7 +72,6 @@ describe('ExplorerNode.vue', () => {
     expect(store.getters['file/current'].id).not.toEqual(node.item.id);
     await new Promise(resolve => setTimeout(resolve, 10));
     expect(store.getters['file/current'].id).toEqual(node.item.id);
-    await specUtils.expectBadge('switchFile');
   });
 
   it('should not open already open file', async () => {
@@ -65,7 +80,6 @@ describe('ExplorerNode.vue', () => {
     await mountAndSelect(node);
     await new Promise(resolve => setTimeout(resolve, 10));
     expect(store.getters['file/current'].id).toEqual(node.item.id);
-    await specUtils.expectBadge('switchFile', false);
   });
 
   it('should open folder on select after a timeout', async () => {
@@ -88,7 +102,28 @@ describe('ExplorerNode.vue', () => {
     expect(wrapper.classes()).toContain('explorer-node--open');
   });
 
+  it('does not create badge state for a new local file', async () => {
+    localStorage.removeItem(legacyBadgeStorageKey);
+    const node = await makeFileNode();
+
+    try {
+      localDbSvc.syncLocalStorage();
+
+      expect(localStorage.getItem(legacyBadgeStorageKey)).toBeNull();
+      expect(store.state.data.lsItemsById.badgeCreations).toBeUndefined();
+    } finally {
+      workspaceSvc.deleteFile(node.item.id);
+    }
+  });
+
   it('should create new file in a folder', async () => {
+    const legacyBadgeRecord = JSON.stringify({
+      id: 'badgeCreations',
+      type: 'data',
+      data: { createFile: { created: 123 } },
+      hash: 456,
+    });
+    localStorage.setItem(legacyBadgeStorageKey, legacyBadgeRecord);
     const node = await makeFolderNode();
     const wrapper = mount(node);
     await wrapper.trigger('contextmenu');
@@ -104,7 +139,9 @@ describe('ExplorerNode.vue', () => {
       parentId: node.item.id,
     });
     expect(wrapper.find('.explorer-node__new-child').exists()).toBe(false);
-    await specUtils.expectBadge('createFile');
+    localDbSvc.syncLocalStorage();
+    expect(localStorage.getItem(legacyBadgeStorageKey)).toBe(legacyBadgeRecord);
+    expect(store.state.data.lsItemsById.badgeCreations).toBeUndefined();
   });
 
   it('should cancel file creation on escape', async () => {
@@ -125,7 +162,6 @@ describe('ExplorerNode.vue', () => {
       parentId: node.item.id,
     });
     expect(wrapper.find('.explorer-node__new-child').exists()).toBe(false);
-    await specUtils.expectBadge('createFile', false);
   });
 
   it('should not create new file in a file', async () => {
@@ -156,7 +192,6 @@ describe('ExplorerNode.vue', () => {
       parentId: node.item.id,
     });
     expect(wrapper.find('.explorer-node__new-child--folder').exists()).toBe(false);
-    await specUtils.expectBadge('createFolder');
   });
 
   it('should cancel folder creation on escape', async () => {
@@ -177,7 +212,6 @@ describe('ExplorerNode.vue', () => {
       parentId: node.item.id,
     });
     expect(wrapper.find('.explorer-node__new-child--folder').exists()).toBe(false);
-    await specUtils.expectBadge('createFolder', false);
   });
 
   it('should not create new folder in a file', async () => {
@@ -208,7 +242,6 @@ describe('ExplorerNode.vue', () => {
     await wrapper.setData({ editingValue: modifiedName });
     await wrapper.find('.explorer-node__item-editor .text-input').trigger('blur');
     expect(store.getters['explorer/selectedNode'].item.name).toEqual(modifiedName);
-    await specUtils.expectBadge('renameFile');
   });
 
   it('should cancel rename file on escape', async () => {
@@ -223,7 +256,6 @@ describe('ExplorerNode.vue', () => {
       key: 'Escape',
     });
     expect(store.getters['explorer/selectedNode'].item.name).not.toEqual(modifiedName);
-    await specUtils.expectBadge('renameFile', false);
   });
 
   it('should rename folder', async () => {
@@ -236,7 +268,6 @@ describe('ExplorerNode.vue', () => {
     await wrapper.setData({ editingValue: modifiedName });
     await wrapper.find('.explorer-node__item-editor .text-input').trigger('blur');
     expect(store.getters['explorer/selectedNode'].item.name).toEqual(modifiedName);
-    await specUtils.expectBadge('renameFolder');
   });
 
   it('should cancel rename folder on escape', async () => {
@@ -251,7 +282,6 @@ describe('ExplorerNode.vue', () => {
       key: 'Escape',
     });
     expect(store.getters['explorer/selectedNode'].item.name).not.toEqual(modifiedName);
-    await specUtils.expectBadge('renameFolder', false);
   });
 
   it('should not rename the trash folder', async () => {
@@ -270,14 +300,12 @@ describe('ExplorerNode.vue', () => {
     const sourceItem = await workspaceSvc.createFile({}, true);
     const targetItem = await workspaceSvc.storeItem({ type: 'folder' });
     await dragAndDrop(sourceItem, targetItem);
-    await specUtils.expectBadge('moveFile');
   });
 
   it('should move folder into a folder', async () => {
     const sourceItem = await workspaceSvc.storeItem({ type: 'folder' });
     const targetItem = await workspaceSvc.storeItem({ type: 'folder' });
     await dragAndDrop(sourceItem, targetItem);
-    await specUtils.expectBadge('moveFolder');
   });
 
   it('should move file into a file parent folder', async () => {
@@ -285,7 +313,6 @@ describe('ExplorerNode.vue', () => {
     const file = await workspaceSvc.createFile({ parentId: targetItem.id }, true);
     const sourceItem = await workspaceSvc.createFile({}, true);
     await dragAndDrop(sourceItem, file);
-    await specUtils.expectBadge('moveFile');
   });
 
   it('should not move the trash folder', async () => {

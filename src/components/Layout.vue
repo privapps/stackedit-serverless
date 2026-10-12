@@ -1,36 +1,22 @@
 <template>
-  <div class="layout" :class="{'layout--revision': revisionContent}">
+  <div class="layout">
     <div class="layout__panel flex flex--row" :class="{'flex--end': styles.showSideBar}">
       <div class="layout__panel layout__panel--explorer" v-show="styles.showExplorer" :aria-hidden="!styles.showExplorer" :style="{width: styles.layoutOverflow ? '100%' : constants.explorerWidth + 'px'}">
         <explorer></explorer>
       </div>
       <div class="layout__panel flex flex--column" tour-step-anchor="welcome,end" :style="{width: styles.innerWidth + 'px'}">
         <div class="layout__panel layout__panel--navigation-bar" v-show="styles.showNavigationBar" :style="{height: constants.navigationBarHeight + 'px'}">
-          <navigation-bar></navigation-bar>
+          <navigation-bar @open-workspace-search="openWorkspaceSearch()"></navigation-bar>
         </div>
         <div class="layout__panel flex flex--row" :style="{height: styles.innerHeight + 'px'}">
-          <div class="layout__panel layout__panel--editor" v-show="styles.showEditor" :style="{width: (styles.editorWidth + styles.editorGutterWidth) + 'px', fontSize: styles.fontSize + 'px'}">
-            <div class="gutter" :style="{left: styles.editorGutterLeft + 'px'}">
-              <div class="gutter__background" v-if="styles.editorGutterWidth" :style="{width: styles.editorGutterWidth + 'px'}"></div>
-            </div>
+          <div class="layout__panel layout__panel--editor" v-show="styles.showEditor" :style="{width: styles.editorWidth + 'px', fontSize: styles.fontSize + 'px'}">
             <editor></editor>
-            <div class="gutter" :style="{left: styles.editorGutterLeft + 'px'}">
-              <sticky-comment v-if="styles.editorGutterWidth && stickyComment === 'top'"></sticky-comment>
-              <current-discussion v-if="styles.editorGutterWidth"></current-discussion>
-            </div>
           </div>
           <div class="layout__panel layout__panel--button-bar" v-show="styles.showEditor" :style="{width: constants.buttonBarWidth + 'px'}">
             <button-bar></button-bar>
           </div>
-          <div class="layout__panel layout__panel--preview" v-show="styles.showPreview" :style="{width: (styles.previewWidth + styles.previewGutterWidth) + 'px', fontSize: styles.fontSize + 'px'}">
-            <div class="gutter" :style="{left: styles.previewGutterLeft + 'px'}">
-              <div class="gutter__background" v-if="styles.previewGutterWidth" :style="{width: styles.previewGutterWidth + 'px'}"></div>
-            </div>
+          <div class="layout__panel layout__panel--preview" v-show="styles.showPreview" :style="{width: styles.previewWidth + 'px', fontSize: styles.fontSize + 'px'}">
             <preview></preview>
-            <div class="gutter" :style="{left: styles.previewGutterLeft + 'px'}">
-              <sticky-comment v-if="styles.previewGutterWidth && stickyComment === 'top'"></sticky-comment>
-              <current-discussion v-if="styles.previewGutterWidth"></current-discussion>
-            </div>
           </div>
           <div class="layout__panel layout__panel--find-replace" v-if="showFindReplace">
             <find-replace></find-replace>
@@ -45,6 +31,7 @@
       </div>
     </div>
     <tour v-if="!light && !layoutSettings.welcomeTourFinished"></tour>
+    <workspace-search-panel v-if="showWorkspaceSearch" @close="closeWorkspaceSearch()"></workspace-search-panel>
   </div>
 </template>
 
@@ -58,9 +45,8 @@ import SideBar from './SideBar';
 import Editor from './Editor';
 import Preview from './Preview';
 import Tour from './Tour';
-import StickyComment from './gutters/StickyComment';
-import CurrentDiscussion from './gutters/CurrentDiscussion';
 import FindReplace from './FindReplace';
+import WorkspaceSearchPanel from './WorkspaceSearchPanel';
 import editorSvc from '../services/editorSvc';
 import markdownConversionSvc from '../services/markdownConversionSvc';
 import store from '../store';
@@ -75,19 +61,15 @@ export default {
     Editor,
     Preview,
     Tour,
-    StickyComment,
-    CurrentDiscussion,
     FindReplace,
+    WorkspaceSearchPanel,
   },
+  data: () => ({
+    showWorkspaceSearch: false,
+  }),
   computed: {
     ...mapState([
       'light',
-    ]),
-    ...mapState('content', [
-      'revisionContent',
-    ]),
-    ...mapState('discussion', [
-      'stickyComment',
     ]),
     ...mapGetters('layout', [
       'constants',
@@ -105,6 +87,12 @@ export default {
       'updateBodySize',
     ]),
     saveSelection: () => editorSvc.saveSelection(true),
+    openWorkspaceSearch() {
+      this.showWorkspaceSearch = true;
+    },
+    closeWorkspaceSearch() {
+      this.showWorkspaceSearch = false;
+    },
   },
   created() {
     markdownConversionSvc.init(); // Needs to be inited before mount
@@ -172,16 +160,6 @@ export default {
     background-color: $editor-background-dark;
   }
 
-  .gutter__background,
-  .comment-list__current-discussion,
-  .sticky-comment,
-  .current-discussion {
-    background-color: mix(#000, $editor-background-light, 6.7%);
-
-    .app--dark & {
-      background-color: mix(#fff, $editor-background-dark, 6.7%);
-    }
-  }
 }
 
 $preview-background-light: #f3f3f3;
@@ -193,15 +171,6 @@ $preview-background-dark: #252525;
 
   .app--dark & {
     background-color: $preview-background-dark;
-  }
-}
-
-.layout__panel--preview {
-  .gutter__background,
-  .comment-list__current-discussion,
-  .sticky-comment,
-  .current-discussion {
-    background-color: mix(#000, $preview-background-light, 6.7%);
   }
 }
 

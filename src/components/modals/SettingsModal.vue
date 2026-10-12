@@ -21,11 +21,11 @@
           <code-editor lang="yaml" :value="defaultSettings" key="default-settings" disabled="true"></code-editor>
         </div>
       </div>
-      <div class="modal__error modal__error--settings">{{error}}</div>
+      <div class="modal__error modal__error--settings" role="alert">{{error}}</div>
     </div>
     <div class="modal__button-bar">
       <button class="button" @click="config.reject()">Cancel</button>
-      <button class="button button--resolve" @click="resolve">Ok</button>
+      <button class="button button--resolve" :disabled="Boolean(error)" @click="resolve">Ok</button>
     </div>
   </modal-inner>
 </template>
@@ -38,7 +38,6 @@ import Tab from './common/Tab';
 import CodeEditor from '../CodeEditor';
 import defaultSettings from '../../data/defaults/defaultSettings.yml';
 import store from '../../store';
-import badgeSvc from '../../services/badgeSvc';
 
 const emptySettings = `# Add your custom settings here to override the
 # default settings.
@@ -82,18 +81,6 @@ export default {
       if (!this.error) {
         const settings = this.strippedCustomSettings;
         await store.dispatch('data/setSettings', settings);
-        const customSettings = yaml.load(settings);
-        if (customSettings.shortcuts) {
-          badgeSvc.addBadge('changeShortcuts');
-        }
-        const computedSettings = store.getters['data/computedSettings'];
-        const customSettingsCount = Object
-          .keys(customSettings)
-          .filter(key => key !== 'shortcuts' && computedSettings[key])
-          .length;
-        if (customSettingsCount) {
-          badgeSvc.addBadge('changeSettings');
-        }
         this.config.resolve(settings);
       }
     },
@@ -106,11 +93,51 @@ export default {
 
 .modal__inner-1.modal__inner-1--settings {
   max-width: 560px;
+  min-width: 0;
+}
+
+.modal__inner-1--settings .modal__inner-2 {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  margin: 12px 10px;
+  padding: 44px 32px 24px;
+}
+
+.modal__inner-1--settings .modal__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.modal__inner-1--settings .tabs {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background: #f8f8f8;
+}
+
+.modal__inner-1--settings .modal__button-bar {
+  flex: 0 0 auto;
+  margin-top: 1rem;
+}
+
+.modal__inner-1--settings :focus-visible {
+  outline: 3px solid #1281d4;
+  outline-offset: 2px;
 }
 
 .modal__error--settings {
   white-space: pre-wrap;
   font-family: $font-family-monospace;
   font-size: $font-size-monospace;
+}
+
+@media (max-width: 480px) {
+  .modal__inner-1--settings .modal__inner-2 {
+    padding: 44px 20px 20px;
+  }
 }
 </style>

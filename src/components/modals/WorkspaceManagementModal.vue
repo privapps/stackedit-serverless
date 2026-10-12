@@ -9,7 +9,7 @@
         <div class="flex flex--column">
           <div class="workspace-entry__header flex flex--row flex--align-center">
             <div class="workspace-entry__icon">
-              <icon-provider :provider-id="workspace.providerId"></icon-provider>
+              <icon-database></icon-database>
             </div>
             <input class="text-input" type="text" v-if="editedId === id" v-focus @blur="submitEdit()" @keydown.enter="submitEdit()" @keydown.esc.stop="submitEdit(true)" v-model="editingName">
             <div class="workspace-entry__name" v-else>{{workspace.name}}</div>
@@ -35,24 +35,6 @@
               </a>
             </div>
           </div>
-          <div class="workspace-entry__row flex flex--row flex--align-center" v-if="workspace.locationUrl">
-            <div class="workspace-entry__url">
-              {{workspace.locationUrl}}
-            </div>
-            <div class="workspace-entry__buttons flex flex--row">
-              <button class="workspace-entry__button button" v-clipboard="workspace.locationUrl" @click="info('Workspace URL copied to clipboard!')" v-title="'Copy URL'">
-                <icon-content-copy></icon-content-copy>
-              </button>
-              <a class="workspace-entry__button button" :href="workspace.locationUrl" target="_blank" v-title="'Open workspace location'">
-                <icon-open-in-new></icon-open-in-new>
-              </a>
-            </div>
-          </div>
-          <div>
-            <span class="workspace-entry__offline" v-if="availableOffline[id]">
-              available offline
-            </span>
-          </div>
         </div>
       </div>
     </div>
@@ -63,13 +45,10 @@
 </template>
 
 <script>
-import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import ModalInner from './common/ModalInner';
 import workspaceSvc from '../../services/workspaceSvc';
 import store from '../../store';
-import badgeSvc from '../../services/badgeSvc';
-import localDbSvc from '../../services/localDbSvc';
 
 export default {
   components: {
@@ -78,7 +57,6 @@ export default {
   data: () => ({
     editedId: null,
     editingName: '',
-    availableOffline: {},
   }),
   computed: {
     ...mapGetters('modal', [
@@ -108,7 +86,6 @@ export default {
               name: this.editingName,
             },
           });
-          badgeSvc.addBadge('renameWorkspace');
         } else {
           this.editingName = workspace.name;
         }
@@ -124,18 +101,9 @@ export default {
         try {
           await store.dispatch('modal/open', 'removeWorkspace');
           workspaceSvc.removeWorkspace(id);
-          badgeSvc.addBadge('removeWorkspace');
         } catch (e) { /* Cancel */ }
       }
     },
-  },
-  created() {
-    Object.keys(this.workspacesById).forEach(async (workspaceId) => {
-      const cancel = localDbSvc.getWorkspaceItems(workspaceId, () => {
-        Vue.set(this.availableOffline, workspaceId, true);
-        cancel();
-      });
-    });
   },
 };
 </script>
@@ -222,12 +190,4 @@ $small-button-size: 22px;
   }
 }
 
-.workspace-entry__offline {
-  font-size: 0.8rem;
-  line-height: 1;
-  padding: 0.15em 0.35em;
-  border-radius: 3px;
-  color: #fff;
-  background-color: darken($error-color, 10);
-}
 </style>

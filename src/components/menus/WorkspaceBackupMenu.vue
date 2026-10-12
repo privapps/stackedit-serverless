@@ -10,25 +10,20 @@
       </div>
     </label>
     <menu-entry @click.native="exportWorkspace">
-      <icon-content-save slot="icon"></icon-content-save>
+      <template #icon><icon-content-save></icon-content-save></template>
       Export workspace backup
     </menu-entry>
   </div>
 </template>
 
 <script>
-import FileSaver from 'file-saver';
 import MenuEntry from './common/MenuEntry';
 import store from '../../store';
 import backupSvc from '../../services/backupSvc';
-import localDbSvc from '../../services/localDbSvc';
 
 export default {
   components: {
     MenuEntry,
-  },
-  computed: {
-    workspaceId: () => store.getters['workspace/currentWorkspace'].id,
   },
   methods: {
     onImportBackup(evt) {
@@ -47,18 +42,7 @@ export default {
         reader.readAsText(blob);
       }
     },
-    exportWorkspace() {
-      const allItemsById = {};
-      localDbSvc.getWorkspaceItems(this.workspaceId, (item) => {
-        allItemsById[item.id] = item;
-      }, () => {
-        const backup = JSON.stringify(allItemsById);
-        const blob = new Blob([backup], {
-          type: 'text/plain;charset=utf-8',
-        });
-        FileSaver.saveAs(blob, 'StackEdit workspace.json');
-      });
-    },
+    exportWorkspace: () => backupSvc.exportWorkspace(),
   },
 };
 </script>

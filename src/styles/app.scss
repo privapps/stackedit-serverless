@@ -152,7 +152,7 @@ textarea {
 }
 
 .button--resolve {
-  background-color: #349be8;
+  background-color: #006ab5;
   color: #fff;
   margin: -2px 0 -2px 4px;
   padding: 10px 20px;
@@ -162,7 +162,12 @@ textarea {
   &:focus,
   &:hover {
     color: #fff;
-    background-color: darken(#349be8, 8%);
+    background-color: #005391;
+  }
+
+  &:focus-visible {
+    outline: 3px solid #151515;
+    outline-offset: 2px;
   }
 }
 
@@ -268,86 +273,6 @@ textarea {
   background-size: contain;
 }
 
-.gutter {
-  position: absolute;
-  top: 0;
-  height: 100%;
-}
-
-.gutter__background {
-  position: absolute;
-  height: 100%;
-  right: 0;
-}
-
-.new-discussion-button {
-  color: rgb(0 0 0 / 33%);
-  position: absolute;
-  left: 0;
-  padding: 3px 3px 3px 0;
-  width: 22px;
-  height: 21px;
-  line-height: 1;
-
-  .app--dark & {
-    color: rgb(255 255 255 / 33%);
-  }
-
-  &:active,
-  &:focus,
-  &:hover {
-    color: rgb(0 0 0 / 40%);
-
-    .app--dark & {
-      color: rgb(255 255 255 / 40%);
-    }
-  }
-}
-
-.discussion-editor-highlighting,
-.discussion-preview-highlighting {
-  background-color: mix($editor-background-light, $selection-highlighting-color, 70%);
-  padding: 0.25em 0;
-
-  .app--dark & {
-    background-color: mix($editor-background-dark, $selection-highlighting-color, 70%);
-  }
-}
-
-.discussion-editor-highlighting--hover,
-.discussion-preview-highlighting--hover {
-  background-color: mix($editor-background-light, $selection-highlighting-color, 50%);
-
-  .app--dark & {
-    background-color: mix($editor-background-dark, $selection-highlighting-color, 50%);
-  }
-
-  * {
-    background-color: transparent;
-  }
-}
-
-.discussion-editor-highlighting--selected,
-.discussion-preview-highlighting--selected {
-  background-color: mix($editor-background-light, $selection-highlighting-color, 20%);
-
-  .app--dark & {
-    background-color: mix($editor-background-dark, $selection-highlighting-color, 20%);
-  }
-
-  * {
-    background-color: transparent;
-  }
-}
-
-.discussion-preview-highlighting {
-  cursor: pointer;
-
-  &.discussion-preview-highlighting--selected {
-    cursor: auto;
-  }
-}
-
 .hidden-rendering-container {
   position: absolute;
   width: 500px;
@@ -370,13 +295,14 @@ textarea {
     }
   }
 
-  body > .app,
-  body > .app > .layout,
-  body > .app > .layout > .layout__panel,
-  body > .app > .layout > .layout__panel > .layout__panel,
-  body > .app > .layout > .layout__panel > .layout__panel > .layout__panel,
-  body > .app > .layout > .layout__panel > .layout__panel > .layout__panel > .layout__panel--preview,
-  body > .app > .layout > .layout__panel > .layout__panel > .layout__panel > .layout__panel--preview div {
+  body > #app,
+  body > #app > .app,
+  body > #app > .app > .layout,
+  body > #app > .app > .layout > .layout__panel,
+  body > #app > .app > .layout > .layout__panel > .layout__panel,
+  body > #app > .app > .layout > .layout__panel > .layout__panel > .layout__panel,
+  body > #app > .app > .layout > .layout__panel > .layout__panel > .layout__panel > .layout__panel--preview,
+  body > #app > .app > .layout > .layout__panel > .layout__panel > .layout__panel > .layout__panel--preview div {
     background-color: transparent !important;
     display: block !important;
     height: auto !important;

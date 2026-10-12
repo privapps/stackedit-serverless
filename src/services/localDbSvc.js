@@ -16,6 +16,7 @@ if (resetApp) {
 class Connection {
   constructor(workspaceId = store.getters['workspace/currentWorkspace'].id) {
     this.getTxCbs = [];
+    this.error = null;
 
     // Make the DB name
     this.dbName = utils.getDbName(workspaceId);
@@ -24,7 +25,10 @@ class Connection {
     const request = indexedDB.open(this.dbName, dbVersion);
 
     request.onerror = () => {
-      throw new Error("Can't connect to IndexedDB.");
+      this.error = request.error || new Error("Can't connect to IndexedDB.");
+      const callbacks = this.getTxCbs || [];
+      this.getTxCbs = null;
+      callbacks.forEach(({ onError }) => onError(this.error));
     };
 
     request.onsuccess = (event) => {
@@ -62,16 +66,22 @@ class Connection {
    * Create a transaction asynchronously.
    */
   createTx(onTx, onError) {
+    if (this.error) {
+      return onError(this.error);
+    }
     // If DB is not ready, keep callbacks for later
     if (!this.db) {
       return this.getTxCbs.push({ onTx, onError });
     }
 
-    // Open transaction in read/write will prevent conflict with other tabs
-    const tx = this.db.transaction(Array.from(this.db.objectStoreNames), 'readwrite');
-    tx.onerror = onError;
-
-    return onTx(tx);
+    try {
+      // Open transaction in read/write will prevent conflict with other tabs
+      const tx = this.db.transaction(Array.from(this.db.objectStoreNames), 'readwrite');
+      tx.onabort = () => onError(tx.error || new Error('Local DB transaction aborted.'));
+      return onTx(tx);
+    } catch (error) {
+      return onError(error);
+    }
   }
 }
 
@@ -91,6 +101,63 @@ const localDbSvc = {
   lastTx: 0,
   hashMap,
   connection: null,
+  syncPromise: null,
+  changeVersion: 0,
+  pendingSave: false,
+  isApplyingRemoteChanges: false,
+
+  /** Check for an existing workspace without creating a new IndexedDB database. */
+  hasWorkspaceDatabase(workspaceId) {
+    return new Promise((resolve, reject) => {
+      let creationAborted = false;
+      const request = indexedDB.open(utils.getDbName(workspaceId), dbVersion);
+      request.onupgradeneeded = () => {
+        creationAborted = true;
+        request.transaction.abort();
+      };
+      request.onsuccess = () => {
+        request.result.close();
+        resolve(!creationAborted);
+      };
+      request.onerror = () => {
+        if (creationAborted || request.error?.name === 'AbortError') {
+          resolve(false);
+        } else {
+          reject(request.error || new Error("Can't inspect the local workspace."));
+        }
+      };
+    });
+  },
+
+  markLocalChangesPending() {
+    this.pendingSave = true;
+    this.changeVersion += 1;
+    if (store.state.localSaveStatus !== 'saving' || store.state.localSaveError) {
+      store.commit('setLocalSaveStatus', {
+        status: 'saving',
+      });
+    }
+  },
+
+  watchLocalChanges() {
+    if (this.unsubscribeFromStore) {
+      return;
+    }
+    this.unsubscribeFromStore = store.subscribe((mutation) => {
+      const [type, operation] = mutation.type.split('/');
+      if (!constants.types.includes(type) ||
+        !['setItem', 'patchItem', 'deleteItem'].includes(operation) ||
+        this.isApplyingRemoteChanges
+      ) {
+        return;
+      }
+      const id = operation === 'deleteItem' ? mutation.payload : mutation.payload.id;
+      if (type === 'data' && constants.localStorageDataIds.includes(id)) {
+        return;
+      }
+      this.markLocalChangesPending();
+    });
+  },
 
   /**
    * Sync data items stored in the localStorage.
@@ -128,28 +195,103 @@ const localDbSvc = {
    * localDb will be finished. Effectively, open a transaction, then read and apply all changes
    * from the DB since the previous transaction, then write all the changes from the store.
    */
-  async sync() {
-    return new Promise((resolve, reject) => {
-      // Create the DB transaction
-      this.connection.createTx((tx) => {
-        const { lastTx } = this;
+  sync() {
+    if (this.syncPromise) {
+      return this.syncPromise;
+    }
 
-        // Look for DB changes and apply them to the store
-        this.readAll(tx, (storeItemMap) => {
-          // Sanitize the workspace if changes have been applied
-          if (lastTx !== this.lastTx) {
-            workspaceSvc.sanitizeWorkspace();
-          }
+    if (this.pendingSave && store.state.localSaveStatus !== 'saving') {
+      store.commit('setLocalSaveStatus', {
+        status: 'saving',
+      });
+    }
 
-          // Persist all the store changes into the DB
-          this.writeAll(storeItemMap, tx);
-          // Sync the localStorage
-          this.syncLocalStorage();
-          // Done
-          resolve();
-        });
-      }, () => reject(new Error('Local DB access error.')));
+    const savedLastTx = this.lastTx;
+    const savedHashMap = {};
+    Object.keys(this.hashMap).forEach((type) => {
+      savedHashMap[type] = { ...this.hashMap[type] };
     });
+    const saveVersion = this.changeVersion;
+    let settled = false;
+
+    const promise = new Promise((resolve, reject) => {
+      const finishError = (error) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.lastTx = savedLastTx;
+        Object.keys(savedHashMap).forEach((type) => {
+          this.hashMap[type] = Object.assign(Object.create(null), savedHashMap[type]);
+        });
+        this.isApplyingRemoteChanges = false;
+        const saveError = error instanceof Error
+          ? error
+          : new Error('Local DB access error.');
+        store.commit('setLocalSaveStatus', {
+          status: 'error',
+          error: saveError.message,
+        });
+        reject(saveError);
+      };
+
+      try {
+        this.connection.createTx((tx) => {
+          tx.addEventListener('abort', () => {
+            finishError(tx.error || new Error('Local DB transaction aborted.'));
+          });
+          tx.addEventListener('complete', () => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            if (this.changeVersion === saveVersion) {
+              this.pendingSave = false;
+              if (store.state.localSaveStatus !== 'saved' || store.state.localSaveError) {
+                store.commit('setLocalSaveStatus', {
+                  status: 'saved',
+                });
+              }
+            } else {
+              store.commit('setLocalSaveStatus', {
+                status: 'saving',
+              });
+            }
+            resolve();
+          });
+
+          const { lastTx } = this;
+          this.readAll(tx, (storeItemMap) => {
+            this.isApplyingRemoteChanges = false;
+            try {
+              // Sanitize the workspace if changes have been applied
+              if (lastTx !== this.lastTx) {
+                workspaceSvc.sanitizeWorkspace();
+              }
+
+              // Persist all the store changes into the DB
+              this.writeAll(storeItemMap, tx);
+              // Sync the localStorage
+              this.syncLocalStorage();
+            } catch (error) {
+              try {
+                tx.abort();
+              } catch {
+                // The transaction may already have aborted.
+              }
+              finishError(error);
+            }
+          });
+        }, finishError);
+      } catch (error) {
+        finishError(error);
+      }
+    });
+
+    this.syncPromise = promise.finally(() => {
+      this.syncPromise = null;
+    });
+    return this.syncPromise;
   },
 
   /**
@@ -182,7 +324,12 @@ const localDbSvc = {
       // Read the collected changes
       const storeItemMap = { ...store.getters.allItemsById };
       changes.forEach((item) => {
-        this.readDbItem(item, storeItemMap);
+        this.isApplyingRemoteChanges = true;
+        try {
+          this.readDbItem(item, storeItemMap);
+        } finally {
+          this.isApplyingRemoteChanges = false;
+        }
         // If item is an old delete marker, remove it from the DB
         if (!item.hash && lastTx - item.tx > deleteMarkerMaxAge) {
           dbStore.delete(item.id);
@@ -363,9 +510,9 @@ const localDbSvc = {
       });
     }
 
-    // If app was last opened 7 days ago and synchronization is off
-    if (!store.getters['workspace/syncToken'] &&
-      (store.state.workspace.lastFocus + constants.cleanTrashAfter < Date.now())
+    // Preserve the historical Trash exemption of connected workspaces as inert metadata.
+    if (!store.getters['workspace/hasLegacyTrashExemption'] &&
+      store.state.workspace.lastFocus + constants.cleanTrashAfter < Date.now()
     ) {
       // Clean files
       store.getters['file/items']
@@ -373,8 +520,17 @@ const localDbSvc = {
         .forEach(file => workspaceSvc.deleteFile(file.id));
     }
 
+    const recordWindowFocus = () => {
+      const lastFocus = Date.now();
+      localStorage.setItem(store.getters['workspace/lastFocusKey'], lastFocus);
+      store.commit('workspace/setLastFocus', lastFocus);
+    };
+    recordWindowFocus();
+    window.addEventListener('focus', recordWindowFocus);
+
     // Sync local DB periodically
-    utils.setInterval(() => localDbSvc.sync(), 1000);
+    localDbSvc.watchLocalChanges();
+    utils.setInterval(() => localDbSvc.sync().catch(() => {}), 1000);
 
     // watch current file changing
     store.watch(
@@ -401,8 +557,6 @@ const localDbSvc = {
           try {
             // Load contentState from DB
             await localDbSvc.loadContentState(currentFile.id);
-            // Load syncedContent from DB
-            await localDbSvc.loadSyncedContent(currentFile.id);
             // Load content from DB
             try {
               await localDbSvc.loadItem(`${currentFile.id}/content`);
@@ -414,11 +568,6 @@ const localDbSvc = {
             }
             // Set last opened file
             store.dispatch('data/setLastOpenedId', currentFile.id);
-            // Cancel new discussion and open the gutter if file contains discussions
-            store.commit(
-              'discussion/setCurrentDiscussionId',
-              store.getters['discussion/nextDiscussionId'],
-            );
           } catch (err) {
             console.error(err); // eslint-disable-line no-console
             store.dispatch('notification/error', err);
@@ -429,25 +578,92 @@ const localDbSvc = {
     );
   },
 
-  getWorkspaceItems(workspaceId, onItem, onFinish = () => {}) {
+  getWorkspaceItems(workspaceId, onItem, onFinish = () => {}, onError = () => {}) {
     const connection = new Connection(workspaceId);
+    let cancelled = false;
+    let finished = false;
+    const close = () => {
+      if (connection.db) {
+        connection.db.close();
+      }
+    };
     connection.createTx((tx) => {
+      if (cancelled) {
+        close();
+        return;
+      }
       const dbStore = tx.objectStore(dbStoreName);
       const index = dbStore.index('tx');
-      index.openCursor().onsuccess = (event) => {
+      const request = index.openCursor();
+      request.onerror = () => {
+        if (!cancelled && !finished) {
+          finished = true;
+          close();
+          onError(request.error || new Error('Local DB access error.'));
+        }
+      };
+      request.onsuccess = (event) => {
+        if (cancelled || finished) {
+          return;
+        }
         const cursor = event.target.result;
         if (cursor) {
-          onItem(cursor.value);
+          try {
+            onItem(cursor.value);
+          } catch (error) {
+            finished = true;
+            close();
+            onError(error);
+            return;
+          }
+          if (cancelled) {
+            return;
+          }
           cursor.continue();
         } else {
-          connection.db.close();
+          finished = true;
+          close();
           onFinish();
         }
       };
+    }, (error) => {
+      if (!cancelled && !finished) {
+        finished = true;
+        close();
+        onError(error || new Error('Local DB access error.'));
+      }
     });
 
     // Return a cancel function
-    return () => connection.db.close();
+    return () => {
+      if (!cancelled && !finished) {
+        cancelled = true;
+        close();
+      }
+    };
+  },
+
+  readWorkspaceItems(workspaceId, onItem = () => {}) {
+    let cancelRead = () => {};
+    let rejectRead;
+    const promise = new Promise((resolve, reject) => {
+      rejectRead = reject;
+      cancelRead = this.getWorkspaceItems(
+        workspaceId,
+        onItem,
+        resolve,
+        reject,
+      );
+    });
+    return {
+      promise,
+      cancel: () => {
+        cancelRead();
+        const error = new Error('Workspace database read was cancelled.');
+        error.name = 'AbortError';
+        rejectRead(error);
+      },
+    };
   },
 };
 
@@ -456,7 +672,6 @@ const loader = type => fileId => localDbSvc.loadItem(`${fileId}/${type}`)
   .catch(() => store.commit(`${type}/setItem`, {
     id: `${fileId}/${type}`,
   }));
-localDbSvc.loadSyncedContent = loader('syncedContent');
 localDbSvc.loadContentState = loader('contentState');
 
 export default localDbSvc;

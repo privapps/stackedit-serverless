@@ -15,9 +15,6 @@ const editorTopPadding = 10;
 const navigationBarEditButtonsWidth = (34 * buttonCount) + (8 * spacerCount); // buttons + spacers
 const navigationBarLeftButtonWidth = 38 + 4 + 12;
 const navigationBarRightButtonWidth = 38 + 8;
-const navigationBarSpinnerWidth = 24 + 8 + 5; // 5 for left margin
-const navigationBarLocationWidth = 20;
-const navigationBarSyncPublishButtonsWidth = 34 + 10;
 const navigationBarTitleMargin = 8;
 const maxTitleMaxWidth = 800;
 const minTitleMaxWidth = 200;
@@ -25,7 +22,6 @@ const minTitleMaxWidth = 200;
 const constants = {
   editorMinWidth: 320,
   explorerWidth: 260,
-  gutterWidth: 250,
   sideBarWidth: 280,
   navigationBarHeight: 44,
   buttonBarWidth: 26,
@@ -35,7 +31,6 @@ const constants = {
 function computeStyles(state, getters, layoutSettings = getters['data/layoutSettings'], styles = {
   showNavigationBar: layoutSettings.showNavigationBar
     || !layoutSettings.showEditor
-    || state.content.revisionContent
     || state.light,
   showStatusBar: layoutSettings.showStatusBar,
   showEditor: layoutSettings.showEditor,
@@ -44,7 +39,6 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
   showSideBar: layoutSettings.showSideBar && !state.light,
   showExplorer: layoutSettings.showExplorer && !state.light,
   layoutOverflow: false,
-  hideLocations: state.light,
 }) {
   styles.innerHeight = state.layout.bodyHeight;
   if (styles.showNavigationBar) {
@@ -55,9 +49,7 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
   }
 
   styles.innerWidth = state.layout.bodyWidth;
-  if (styles.innerWidth < constants.editorMinWidth
-    + constants.gutterWidth + constants.buttonBarWidth
-  ) {
+  if (styles.innerWidth < constants.editorMinWidth + constants.buttonBarWidth) {
     styles.layoutOverflow = true;
   }
   if (styles.showSideBar) {
@@ -68,11 +60,6 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
   }
 
   let doublePanelWidth = styles.innerWidth - constants.buttonBarWidth;
-  // No commenting for temp files
-  const showGutter = !getters['file/isCurrentTemp'] && !!getters['discussion/currentDiscussion'];
-  if (showGutter) {
-    doublePanelWidth -= constants.gutterWidth;
-  }
   if (doublePanelWidth < constants.editorMinWidth) {
     doublePanelWidth = constants.editorMinWidth;
   }
@@ -113,38 +100,19 @@ function computeStyles(state, getters, layoutSettings = getters['data/layoutSett
   if (!styles.showSidePreview) {
     styles.previewWidth += constants.buttonBarWidth;
   }
-  styles.previewGutterWidth = showGutter && !layoutSettings.showEditor
-    ? constants.gutterWidth
-    : 0;
-  const previewLeftPadding = previewRightPadding + styles.previewGutterWidth;
-  styles.previewGutterLeft = previewLeftPadding - minPadding;
-  styles.previewPadding = `${editorTopPadding}px ${previewRightPadding}px ${bottomPadding}px ${previewLeftPadding}px`;
+  styles.previewPadding = `${editorTopPadding}px ${previewRightPadding}px ${bottomPadding}px ${previewRightPadding}px`;
   styles.editorWidth = styles.showSidePreview ?
     panelWidth :
     doublePanelWidth;
   const editorRightPadding = Math
     .max(Math.floor((styles.editorWidth - styles.textWidth) / 2), minPadding);
-  styles.editorGutterWidth = showGutter && layoutSettings.showEditor
-    ? constants.gutterWidth
-    : 0;
-  const editorLeftPadding = editorRightPadding + styles.editorGutterWidth;
-  styles.editorGutterLeft = editorLeftPadding - minPadding;
-  styles.editorPadding = `${editorTopPadding}px ${editorRightPadding}px ${bottomPadding}px ${editorLeftPadding}px`;
+  styles.editorPadding = `${editorTopPadding}px ${editorRightPadding}px ${bottomPadding}px ${editorRightPadding}px`;
 
   styles.titleMaxWidth = styles.innerWidth -
     navigationBarLeftButtonWidth -
-    navigationBarRightButtonWidth -
-    navigationBarSpinnerWidth;
+    navigationBarRightButtonWidth;
   if (styles.showEditor) {
-    const syncLocations = getters['syncLocation/current'];
-    const publishLocations = getters['publishLocation/current'];
-    styles.titleMaxWidth -= navigationBarEditButtonsWidth +
-      (navigationBarLocationWidth * (syncLocations.length + publishLocations.length)) +
-      (navigationBarSyncPublishButtonsWidth * 2) +
-      navigationBarTitleMargin;
-    if (styles.titleMaxWidth + navigationBarEditButtonsWidth < minTitleMaxWidth) {
-      styles.hideLocations = true;
-    }
+    styles.titleMaxWidth -= navigationBarEditButtonsWidth + navigationBarTitleMargin;
   }
   styles.titleMaxWidth = Math
     .max(minTitleMaxWidth, Math

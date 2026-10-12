@@ -1,6 +1,6 @@
 <template>
   <div class="app" :class="classes" @keydown.esc="close">
-    <splash-screen v-if="!ready"></splash-screen>
+    <splash-screen v-if="!ready" :error="startupError"></splash-screen>
     <layout v-else></layout>
     <modal></modal>
     <notification></notification>
@@ -17,9 +17,10 @@ import Modal from './Modal';
 import Notification from './Notification';
 import ContextMenu from './ContextMenu';
 import SplashScreen from './SplashScreen';
-import syncSvc from '../services/syncSvc';
-import networkSvc from '../services/networkSvc';
 import tempFileSvc from '../services/tempFileSvc';
+import localDbSvc from '../services/localDbSvc';
+import workspaceSvc from '../services/workspaceSvc';
+import utils from '../services/utils';
 import store from '../store';
 import './common/vueGlobals';
 
@@ -38,6 +39,7 @@ export default {
   },
   data: () => ({
     ready: false,
+    startupError: '',
   }),
   computed: {
     classes() {
@@ -52,8 +54,20 @@ export default {
   },
   async created() {
     try {
-      await syncSvc.init();
-      await networkSvc.init();
+      localDbSvc.syncLocalStorage();
+      const workspaceId = workspaceSvc.resolveInitialWorkspaceId(
+        utils.queryParams,
+        store.getters['data/workspaces'],
+      );
+      if (!workspaceId) {
+        throw new Error('This workspace is not available in this browser. Open a locally stored workspace.');
+      }
+      if (workspaceId !== 'main' && !await localDbSvc.hasWorkspaceDatabase(workspaceId)) {
+        throw new Error('This workspace is not available in this browser. Open a locally stored workspace.');
+      }
+      await store.dispatch('workspace/setCurrentWorkspaceId', workspaceId);
+      await localDbSvc.init();
+      await tempFileSvc.init();
       this.ready = true;
       tempFileSvc.setReady();
     } catch (err) {
@@ -61,7 +75,7 @@ export default {
         window.location.reload();
       } else if (err && err.message !== 'RELOAD') {
         console.error(err); // eslint-disable-line no-console
-        store.dispatch('notification/error', err);
+        this.startupError = err.message || 'Could not open the local notebook.';
       }
     }
   },

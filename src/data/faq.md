@@ -1,9 +1,9 @@
 **Where is my data stored?**
 
-If your workspace is not synced, your files are stored inside your browser and nowhere else.
+Your notes are saved in this browser on this device. The notebook does not sync them to an account or a StackEdit backend. Export a workspace backup and keep it somewhere safe if you need a copy outside this browser.
 
-We recommend syncing your workspace to make sure files won't be lost in case your browser data is cleared. Self-hosted CouchDB or GitLab backends are well suited for privacy.
+Clearing this browser's site data removes the local notebook. Export individual notes or use **Export workspace backup** before clearing browser data or moving to another device.
 
 **Can StackEdit access my data without telling me?**
 
-StackEdit is a browser-based application. The access tokens issued by Google, Dropbox, GitHub... are stored in your browser and are not sent to any kind of backend or 3^rd^ party so your data won't be accessed by anyone.
+The notebook does not send your notes to a StackEdit backend or an account provider. Links and image URLs that you add to a note may point to external sites and can require an internet connection when opened.

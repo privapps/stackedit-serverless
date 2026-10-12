@@ -5,7 +5,6 @@
     </div>
     <div class="explorer-node__item" v-else :style="{paddingLeft: leftPadding}" @click="select()" draggable="true" @dragstart.stop="setDragSourceId" @dragend.stop="setDragTarget()">
       {{node.item.name}}
-      <icon-provider class="explorer-node__location" v-for="location in node.locations" :key="location.id" :provider-id="location.providerId"></icon-provider>
     </div>
     <div class="explorer-node__children" v-if="node.isFolder && isOpen">
       <explorer-node v-for="node in node.folders" :key="node.item.id" :node="node" :depth="depth + 1"></explorer-node>
@@ -22,7 +21,6 @@ import { mapMutations, mapActions } from 'vuex';
 import workspaceSvc from '../services/workspaceSvc';
 import explorerSvc from '../services/explorerSvc';
 import store from '../store';
-import badgeSvc from '../services/badgeSvc';
 
 export default {
   name: 'explorer-node', // Required for recursivity
@@ -108,7 +106,6 @@ export default {
             store.commit('explorer/toggleOpenNode', id);
           } else if (store.state.file.currentId !== id) {
             store.commit('file/setCurrentId', id);
-            badgeSvc.addBadge('switchFile');
           }
         }, 10);
       }
@@ -121,11 +118,9 @@ export default {
           if (newChildNode.isFolder) {
             const item = await workspaceSvc.storeItem(newChildNode.item);
             this.select(item.id);
-            badgeSvc.addBadge('createFolder');
           } else {
             const item = await workspaceSvc.createFile(newChildNode.item);
             this.select(item.id);
-            badgeSvc.addBadge('createFile');
           }
         } catch (e) {
           // Cancel
@@ -134,7 +129,7 @@ export default {
       store.commit('explorer/setNewItem', null);
     },
     async submitEdit(cancel) {
-      const { item, isFolder } = store.getters['explorer/editingNode'];
+      const { item } = store.getters['explorer/editingNode'];
       const value = this.editingValue;
       this.setEditingId(null);
       if (!cancel && item.id && value && item.name !== value) {
@@ -143,7 +138,6 @@ export default {
             ...item,
             name: value,
           });
-          badgeSvc.addBadge(isFolder ? 'renameFolder' : 'renameFile');
         } catch (e) {
           // Cancel
         }
@@ -171,7 +165,6 @@ export default {
           ...sourceNode.item,
           parentId: targetNode.item.id,
         });
-        badgeSvc.addBadge(sourceNode.isFolder ? 'moveFolder' : 'moveFile');
       }
     },
     async onContextMenu(evt) {

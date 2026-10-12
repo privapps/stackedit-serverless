@@ -22,17 +22,6 @@ const parseQueryParams = (params) => {
   return result;
 };
 
-// For utils.setQueryParams()
-const filterParams = (params = {}) => {
-  const result = {};
-  Object.entries(params).forEach(([key, value]) => {
-    if (key && value != null) {
-      result[key] = value;
-    }
-  });
-  return result;
-};
-
 // For utils.computeProperties()
 const deepOverride = (obj, opt) => {
   if (obj === undefined) {
@@ -55,7 +44,6 @@ const deepOverride = (obj, opt) => {
   return obj;
 };
 
-// For utils.addQueryParams()
 const urlParser = document.createElement('a');
 
 const deepCopy = (obj) => {
@@ -78,15 +66,6 @@ Object.keys(presets).forEach((key) => {
 export default {
   computedPresets,
   queryParams: parseQueryParams(window.location.hash.slice(1)),
-  setQueryParams(params = {}) {
-    this.queryParams = filterParams(params);
-    const serializedParams = Object.entries(this.queryParams).map(([key, value]) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
-    const hash = `#${serializedParams}`;
-    if (window.location.hash !== hash) {
-      window.location.replace(hash);
-    }
-  },
   sanitizeText(text) {
     const result = `${text || ''}`.slice(0, constants.textMaxLength);
     // last char must be a `\n`.
@@ -224,12 +203,6 @@ export default {
     };
     return runWithNextValue();
   },
-  async awaitSome(asyncFunc) {
-    if (await asyncFunc()) {
-      return this.awaitSome(asyncFunc);
-    }
-    return null;
-  },
   someResult(values, func) {
     let result;
     values.some((value) => {
@@ -239,31 +212,6 @@ export default {
     return result;
   },
   parseQueryParams,
-  addQueryParams(url = '', params = {}, hash = false) {
-    const keys = Object.keys(params).filter(key => params[key] != null);
-    urlParser.href = url;
-    if (!keys.length) {
-      return urlParser.href;
-    }
-    const serializedParams = keys.map(key =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
-    if (hash) {
-      if (urlParser.hash) {
-        urlParser.hash += '&';
-      } else {
-        urlParser.hash = '#';
-      }
-      urlParser.hash += serializedParams;
-    } else {
-      if (urlParser.search) {
-        urlParser.search += '&';
-      } else {
-        urlParser.search = '?';
-      }
-      urlParser.search += serializedParams;
-    }
-    return urlParser.href;
-  },
   resolveUrl(baseUrl, path) {
     const oldBaseElt = document.getElementsByTagName('base')[0];
     const oldHref = oldBaseElt && oldBaseElt.href;
@@ -284,26 +232,6 @@ export default {
   },
   encodeUrlPath(path) {
     return path ? path.split('/').map(encodeURIComponent).join('/') : '';
-  },
-  parseGithubRepoUrl(url) {
-    const parsedRepo = url && url.match(/([^/:]+)\/([^/]+?)(?:\.git|\/)?$/);
-    return parsedRepo && {
-      owner: parsedRepo[1],
-      repo: parsedRepo[2],
-    };
-  },
-  parseGitlabProjectPath(url) {
-    const parsedProject = url && url.match(/^https:\/\/[^/]+\/(.+?)(?:\.git|\/)?$/);
-    return parsedProject && parsedProject[1];
-  },
-  createHiddenIframe(url) {
-    const iframeElt = document.createElement('iframe');
-    iframeElt.style.position = 'absolute';
-    iframeElt.style.left = '-99px';
-    iframeElt.style.width = '1px';
-    iframeElt.style.height = '1px';
-    iframeElt.src = url;
-    return iframeElt;
   },
   wrapRange(range, eltProperties) {
     const rangeLength = `${range}`.length;

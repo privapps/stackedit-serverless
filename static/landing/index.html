@@ -7,7 +7,7 @@
     <link rel="icon" href="static/landing/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="static/landing/favicon.ico" type="image/x-icon">
     <meta charset="UTF-8">
-    <meta name="description" content="Full-featured, open-source Markdown editor based on PageDown, the Markdown library used by Stack Overflow and the other Stack Exchange sites.">
+    <meta name="description" content="A browser-based Markdown notebook with local saving, workspace search, backups, export, and printing.">
     <meta name="author" content="Benoit Schweblin">
     <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="msvalidate.01" content="5E47EE6F67B069C17E3CDD418351A612">
@@ -257,13 +257,6 @@
             margin: 0.5em auto;
         }
     </style>
-    <script>
-        function scrollTo(selector) {
-            $('html,body').animate({
-                scrollTop: $(selector).offset().top
-            }, 500);
-        }
-    </script>
 </head>
 
 <body>
@@ -289,12 +282,12 @@
                 </div>
             </div>
             <div class="splash-screen__footer">
-                <a class="button" href="javascript:scrollTo($('.anchor'))">
+                <a class="button" href="#anchor">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon"><path d="M 11,4L 13,4L 13,16.0104L 18.5052,10.5052L 19.9194,11.9194L 12,19.8388L 4.08058,11.9194L 5.49479,10.5052L 11,16.0104L 11,4 Z "/></path></svg> Read more
                 </a>
             </div>
         </div>
-        <div class="anchor"></div>
+        <div class="anchor" id="anchor"></div>
         <div class="landing__content">
             <h1>Unrivalled writing experience</h1>
             <div class="row">
@@ -313,15 +306,15 @@
             <div class="row">
                 <img class="image" width="410" src="static/landing/navigation-bar.png">
                 <div class="feature">
-                    <h3>WYSIWYG controls</h3>
-                    <p>StackEdit provides very handy formatting buttons and shortcuts, thanks to PageDown, the WYSIWYG-style Markdown editor used by Stack Overflow.</p>
+                    <h3>Formatting controls</h3>
+                    <p>Use the formatting buttons and keyboard shortcuts to structure Markdown as you write.</p>
                 </div>
             </div>
             <div class="row">
                 <div class="column">
                     <div class="feature">
                         <h3>Smart layout</h3>
-                        <p>Whether you write, you review, you comment… StackEdit's layout provides you with the flexibility you need, without sacrifice.</p>
+                        <p>Adjust the editor, preview, and layout to suit your writing and review workflow.</p>
                     </div>
                 </div>
                 <div class="column">
@@ -339,35 +332,29 @@
             <div class="row">
                 <div class="column">
                     <div class="feature">
-                        <h3>Stay connected</h3>
-                        <p>StackEdit can sync your files with Google Drive, Dropbox and GitHub. It can also publish them as blog posts to Blogger, WordPress and Zendesk. You can choose whether to upload in Markdown format, HTML, or to format the output using
-                            the Handlebars template engine.</p>
+                        <h3>Keep a local notebook</h3>
+                        <p>Write and organize Markdown files in your browser. Changes save locally as you work.</p>
                     </div>
                 </div>
                 <div class="column">
-                    <img class="image" width="300" src="static/landing/providers.png">
+                    <div class="feature">
+                        <h3>Search and back up</h3>
+                        <p>Find notes across nested folders and unopened files, then download a workspace backup to keep outside this browser.</p>
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="column">
                     <div class="feature">
-                        <h3>Collaborate</h3>
-                        <p>With StackEdit, you can share collaborative workspaces, thanks to the synchronization mechanism. If two collaborators are working on the same file at the same time, StackEdit takes care of merging the changes.</p>
+                        <h3>Export and print</h3>
+                        <p>Download Markdown or styled HTML with its styles and rendering assets included, or use the browser to print or save as PDF. Linked images remain external.</p>
                     </div>
-                    <img class="image" width="300" src="static/landing/workspace.png">
                 </div>
                 <div class="column">
                     <div class="feature">
-                        <h3>Comment</h3>
-                        <p>StackEdit allows you to insert inline comments and embed collaborator discussions in your files, just as well as Microsoft Word and Google Docs.</p>
+                        <h3>Work offline</h3>
+                        <p>Use the installed or cached application without a connection. Your notes remain in this browser, so keep an exported backup before clearing its site data.</p>
                     </div>
-                    <img class="image" width="395" src="static/landing/discussion.png">
-                </div>
-            </div>
-            <div class="row">
-                <div class="feature">
-                    <h3>Write offline!</h3>
-                    <p>Even when you travel, StackEdit is still accessible and lets you write offline just like any desktop application. You have no excuse!</p>
                 </div>
             </div>
             <h1>Extended Markdown support</h1>
@@ -414,19 +401,6 @@
             </div>
             <div class="row">
                 <div class="column">
-                    <div class="image" style="width: 280px">
-                        <img width="260" src="static/landing/abc.png">
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="feature">
-                        <h3>Scores</h3>
-                        <p>StackEdit can render musical scores using the ABC notation.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="column">
                     <div class="image" style="width: 250px">
                         <img width="230" src="static/landing/twemoji.png">
                     </div>
@@ -454,7 +428,6 @@
             <a href="privacy_policy.html" target="_blank">Privacy Policy</a>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 </body>
 
 </html>

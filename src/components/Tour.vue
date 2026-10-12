@@ -29,9 +29,9 @@
         </div>
       </div>
       <div class="tour-step__inner" v-else-if="step === 'menu'">
-        <h2>Do a lot more!</h2>
-        <p>StackEdit can also synchronize and publish your files, manage collaborative workspaces...</p>
-        <p>Click <icon-provider provider-id="stackedit"></icon-provider> to explore the menu.</p>
+        <h2>Your offline notebook</h2>
+        <p>Write, organize, search, export, and back up Markdown notes in this browser.</p>
+        <p>Click <icon-database></icon-database> to explore the menu.</p>
         <div class="tour-step__button-bar">
           <button class="button" @click="finish">Skip</button>
           <button class="button button--resolve" @click="next">Next</button>
@@ -161,7 +161,7 @@ $tour-step-width: 240px;
   }
 
   .icon,
-  .icon-provider {
+  .icon-database {
     width: 1.25em;
     height: 1.25em;
     vertical-align: bottom;

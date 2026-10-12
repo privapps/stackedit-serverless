@@ -7,13 +7,20 @@ describe('NavigationBar.vue', () => {
     NavigationBar,
     wrapper => wrapper.find('.navigation-bar__button--explorer-toggler').trigger('click'),
     () => store.getters['data/layoutSettings'].showExplorer,
-    'toggleExplorer',
   ));
 
   it('should toggle the side bar', async () => specUtils.checkToggler(
     NavigationBar,
-    wrapper => wrapper.find('.navigation-bar__button--stackedit').trigger('click'),
+    wrapper => wrapper.find('.navigation-bar__button--menu').trigger('click'),
     () => store.getters['data/layoutSettings'].showSideBar,
-    'toggleSideBar',
   ));
+
+  it('exposes an accessible workspace search button independently of the explorer', async () => {
+    const wrapper = specUtils.shallowMount(NavigationBar);
+    const button = wrapper.find('.navigation-bar__button--workspace-search');
+
+    expect(button.attributes('aria-label')).toBe('Search workspace');
+    await button.trigger('click');
+    expect(wrapper.emitted('open-workspace-search')).toHaveLength(1);
+  });
 });

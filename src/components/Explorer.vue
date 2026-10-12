@@ -15,9 +15,14 @@
           <icon-pen></icon-pen>
         </button>
       </div>
-      <button class="side-title__button side-title__button--close button" @click="toggleExplorer(false)" v-title="'Close explorer'">
-        <icon-close></icon-close>
-      </button>
+      <div class="flex flex--row">
+        <button class="side-title__button side-title__button--backup button" aria-label="Export workspace backup" @click="exportWorkspace()" v-title="'Export workspace backup'">
+          <icon-content-save></icon-content-save>
+        </button>
+        <button class="side-title__button side-title__button--close button" @click="toggleExplorer(false)" v-title="'Close explorer'">
+          <icon-close></icon-close>
+        </button>
+      </div>
     </div>
     <div class="explorer__tree" :class="{'explorer__tree--new-item': !newChildNode.isNil}" v-if="!light" tabindex="0" @keydown.delete="deleteItem()">
       <explorer-node :node="rootNode" :depth="0"></explorer-node>
@@ -29,6 +34,7 @@
 import { mapState, mapGetters, mapActions } from 'vuex';
 import ExplorerNode from './ExplorerNode';
 import explorerSvc from '../services/explorerSvc';
+import backupSvc from '../services/backupSvc';
 import store from '../store';
 
 export default {
@@ -53,6 +59,7 @@ export default {
     ]),
     newItem: isFolder => explorerSvc.newItem(isFolder),
     deleteItem: () => explorerSvc.deleteItem(),
+    exportWorkspace: () => backupSvc.exportWorkspace(),
     editItem() {
       const node = this.selectedNode;
       if (!node.isTrash && !node.isTemp) {

@@ -188,10 +188,6 @@ img {
   break-after: page;
 }
 
-.abc-notation-block {
-  overflow-x: auto !important;
-}
-
 .stackedit__html {
   margin-bottom: 180px;
   margin-left: auto;
@@ -264,24 +260,5 @@ img {
 
   @media (min-width: 1060px) {
     left: 250px;
-  }
-}
-
-.stackedit--pdf {
-  blockquote {
-    // wkhtmltopdf doesn't like borders with transparency
-    border-left-color: #ececec;
-  }
-
-  // Hide tex annotations in PDF exports
-  annotation,
-  .katex-mathml {
-    display: none;
-  }
-
-  .stackedit__html {
-    padding-left: 0;
-    padding-right: 0;
-    max-width: none;
   }
 }

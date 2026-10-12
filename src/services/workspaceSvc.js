@@ -1,11 +1,77 @@
 import store from '../store';
 import utils from './utils';
 import constants from '../data/constants';
-import badgeSvc from './badgeSvc';
 
-const forbiddenFolderNameMatcher = /^\.stackedit-data$|^\.stackedit-trash$|\.md$|\.sync$|\.publish$/;
+const forbiddenFolderNameMatcher = /^\.stackedit-data$|^\.stackedit-trash$|\.md$/;
+
+const getLegacyWorkspaceParams = (query) => {
+  const normalizePath = (value) => {
+    const path = (value || '').trim()
+      .replace(/^\/*/, '')
+      .replace(/\/*$/, '/');
+    return path === '/' ? undefined : path;
+  };
+
+  switch (query.providerId) {
+    case 'googleDriveAppData':
+      return {};
+    case 'googleDriveWorkspace':
+      return query.folderId ? {
+        providerId: query.providerId,
+        folderId: query.folderId,
+      } : null;
+    case 'githubWorkspace':
+      return {
+        providerId: query.providerId,
+        owner: query.owner,
+        repo: query.repo,
+        branch: query.branch || 'master',
+        path: normalizePath(query.path),
+      };
+    case 'gitlabWorkspace':
+      return {
+        providerId: query.providerId,
+        serverUrl: query.serverUrl,
+        projectPath: (query.projectPath || '').trim()
+          .replace(/^\/*/, '')
+          .replace(/\/*$/, ''),
+        branch: query.branch || 'master',
+        path: normalizePath(query.path),
+      };
+    case 'couchdbWorkspace':
+      return {
+        providerId: query.providerId,
+        dbUrl: (query.dbUrl || '').replace(/\/?$/, ''),
+      };
+    default:
+      return null;
+  }
+};
 
 export default {
+
+  /**
+   * Resolve the requested workspace only when its local record exists.
+   * Legacy provider links are mapped by their historical workspace ID inputs.
+   */
+  resolveInitialWorkspaceId(query = {}, workspacesById = {}) {
+    let workspaceId;
+    if (query.workspaceId) {
+      workspaceId = query.workspaceId;
+    } else if (!query.providerId) {
+      workspaceId = 'main';
+    } else {
+      const workspaceParams = getLegacyWorkspaceParams(query);
+      if (workspaceParams == null) {
+        return null;
+      }
+      workspaceId = Object.keys(workspaceParams).length
+        ? utils.makeWorkspaceId(workspaceParams)
+        : 'main';
+    }
+
+    return workspacesById[workspaceId] ? workspaceId : null;
+  },
 
   /**
    * Create a file in the store with the specified fields.
@@ -17,6 +83,7 @@ export default {
     properties,
     discussions,
     comments,
+    history,
   } = {}, background = false) {
     const id = utils.uid();
     const item = {
@@ -31,9 +98,8 @@ export default {
         .sanitizeText(properties || store.getters['data/computedSettings'].newFileProperties),
       discussions: discussions || {},
       comments: comments || {},
+      history: history || [],
     };
-    const workspaceUniquePaths = store.getters['workspace/currentWorkspaceHasUniquePaths'];
-
     // Show warning dialogs
     if (!background) {
       // If name is being stripped
@@ -44,26 +110,11 @@ export default {
         });
       }
 
-      // Check if there is already a file with that path
-      if (workspaceUniquePaths) {
-        const parentPath = store.getters.pathsByItemId[item.parentId] || '';
-        const path = parentPath + item.name;
-        if (store.getters.itemsByPath[path]) {
-          await store.dispatch('modal/open', {
-            type: 'pathConflict',
-            item,
-          });
-        }
-      }
     }
 
     // Save file and content in the store
     store.commit('content/setItem', content);
     store.commit('file/setItem', item);
-    if (workspaceUniquePaths) {
-      this.makePathUnique(id);
-    }
-
     // Return the new file item
     return store.state.file.itemsById[id];
   },
@@ -92,28 +143,13 @@ export default {
       });
     }
 
-    // Check if there is a path conflict
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
-      const parentPath = store.getters.pathsByItemId[item.parentId] || '';
-      const path = parentPath + sanitizedName;
-      const items = store.getters.itemsByPath[path] || [];
-      if (items.some(itemWithSamePath => itemWithSamePath.id !== id)) {
-        await store.dispatch('modal/open', {
-          type: 'pathConflict',
-          item,
-        });
-      }
-    }
-
     return this.setOrPatchItem({
       ...item,
       id,
     });
   },
 
-  /**
-   * Create/update the folder/file in the store and make sure its path is unique.
-   */
+  /** Create or update a local file or folder. */
   setOrPatchItem(patch) {
     const item = {
       ...store.getters.allItemsById[patch.id] || patch,
@@ -138,11 +174,6 @@ export default {
     // Remove circular reference
     this.removeCircularReference(item);
 
-    // Ensure path uniqueness
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
-      this.makePathUnique(item.id);
-    }
-
     return store.getters.allItemsById[item.id];
   },
 
@@ -154,27 +185,17 @@ export default {
     store.commit('file/deleteItem', fileId);
     // Delete the content
     store.commit('content/deleteItem', `${fileId}/content`);
-    // Delete the syncedContent
-    store.commit('syncedContent/deleteItem', `${fileId}/syncedContent`);
     // Delete the contentState
     store.commit('contentState/deleteItem', `${fileId}/contentState`);
-    // Delete sync locations
-    (store.getters['syncLocation/groupedByFileId'][fileId] || [])
-      .forEach(item => store.commit('syncLocation/deleteItem', item.id));
-    // Delete publish locations
-    (store.getters['publishLocation/groupedByFileId'][fileId] || [])
-      .forEach(item => store.commit('publishLocation/deleteItem', item.id));
   },
 
   /**
    * Sanitize the whole workspace.
    */
-  sanitizeWorkspace(idsToKeep) {
+  sanitizeWorkspace() {
     // Detect and remove circular references for all folders.
     store.getters['folder/items'].forEach(folder => this.removeCircularReference(folder));
 
-    this.ensureUniquePaths(idsToKeep);
-    this.ensureUniqueLocations(idsToKeep);
   },
 
   /**
@@ -198,97 +219,6 @@ export default {
   },
 
   /**
-   * Ensure two files/folders don't have the same path if the workspace doesn't allow it.
-   */
-  ensureUniquePaths(idsToKeep = {}) {
-    if (store.getters['workspace/currentWorkspaceHasUniquePaths']) {
-      if (Object.keys(store.getters.pathsByItemId)
-        .some(id => !idsToKeep[id] && this.makePathUnique(id))
-      ) {
-        // Just changed one item path, restart
-        this.ensureUniquePaths(idsToKeep);
-      }
-    }
-  },
-
-  /**
-   * Return false if the file/folder path is unique.
-   * Add a prefix to its name and return true otherwise.
-   */
-  makePathUnique(id) {
-    const { itemsByPath, allItemsById, pathsByItemId } = store.getters;
-    const item = allItemsById[id];
-    if (!item) {
-      return false;
-    }
-    let path = pathsByItemId[id];
-    if (itemsByPath[path].length === 1) {
-      return false;
-    }
-    const isFolder = item.type === 'folder';
-    if (isFolder) {
-      // Remove trailing slash
-      path = path.slice(0, -1);
-    }
-    for (let suffix = 1; ; suffix += 1) {
-      let pathWithSuffix = `${path}.${suffix}`;
-      if (isFolder) {
-        pathWithSuffix += '/';
-      }
-      if (!itemsByPath[pathWithSuffix]) {
-        store.commit(`${item.type}/patchItem`, {
-          id: item.id,
-          name: `${item.name}.${suffix}`,
-        });
-        return true;
-      }
-    }
-  },
-
-  addSyncLocation(location) {
-    store.commit('syncLocation/setItem', {
-      ...location,
-      id: utils.uid(),
-    });
-
-    // Sanitize the workspace
-    this.ensureUniqueLocations();
-
-    if (Object.keys(store.getters['syncLocation/currentWithWorkspaceSyncLocation']).length > 1) {
-      badgeSvc.addBadge('syncMultipleLocations');
-    }
-  },
-
-  addPublishLocation(location) {
-    store.commit('publishLocation/setItem', {
-      ...location,
-      id: utils.uid(),
-    });
-
-    // Sanitize the workspace
-    this.ensureUniqueLocations();
-
-    if (Object.keys(store.getters['publishLocation/current']).length > 1) {
-      badgeSvc.addBadge('publishMultipleLocations');
-    }
-  },
-
-  /**
-   * Ensure two sync/publish locations of the same file don't have the same hash.
-   */
-  ensureUniqueLocations(idsToKeep = {}) {
-    ['syncLocation', 'publishLocation'].forEach((type) => {
-      store.getters[`${type}/items`].forEach((item) => {
-        if (!idsToKeep[item.id]
-          && store.getters[`${type}/groupedByFileIdAndHash`][item.fileId][item.hash].length > 1
-        ) {
-          store.commit(`${item.type}/deleteItem`, item.id);
-        }
-      });
-    });
-  },
-
-  /**
    * Drop the database and clean the localStorage for the specified workspaceId.
    */
   async removeWorkspace(id) {
@@ -306,7 +236,6 @@ export default {
     });
 
     // Clean the local storage
-    localStorage.removeItem(`${id}/lastSyncActivity`);
     localStorage.removeItem(`${id}/lastWindowFocus`);
   },
 };

@@ -42,8 +42,6 @@ const webpackConfig = merge(baseWebpackConfig, {
       new CssMinimizerPlugin(),
     ],
     splitChunks: {
-      // Keep templateWorker self-contained so its imports resolve from its deployment path.
-      chunks: chunk => chunk.name !== 'template-worker',
       name: 'vendor',
     },
     runtimeChunk: {

@@ -18,9 +18,8 @@ const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: tr
 const compare = (node1, node2) => collator.compare(node1.item.name, node2.item.name);
 
 class Node {
-  constructor(item, locations = [], isFolder = false) {
+  constructor(item, isFolder = false) {
     this.item = item;
-    this.locations = locations;
     this.isFolder = isFolder;
     if (isFolder) {
       this.folders = [];
@@ -72,7 +71,7 @@ export default {
     setDragSourceId: setter('dragSourceId'),
     setDragTargetId: setter('dragTargetId'),
     setNewItem(state, item) {
-      state.newChildNode = item ? new Node(item, [], item.type === 'folder') : nilFileNode;
+      state.newChildNode = item ? new Node(item, item.type === 'folder') : nilFileNode;
     },
     setNewItemName(state, name) {
       state.newChildNode.item.name = name;
@@ -83,11 +82,11 @@ export default {
   },
   getters: {
     nodeStructure: (state, getters, rootState, rootGetters) => {
-      const rootNode = new Node(emptyFolder(), [], true);
+      const rootNode = new Node(emptyFolder(), true);
       rootNode.isRoot = true;
 
       // Create Trash node
-      const trashFolderNode = new Node(emptyFolder(), [], true);
+      const trashFolderNode = new Node(emptyFolder(), true);
       trashFolderNode.item.id = 'trash';
       trashFolderNode.item.name = 'Trash';
       trashFolderNode.noDrag = true;
@@ -95,7 +94,7 @@ export default {
       trashFolderNode.parentNode = rootNode;
 
       // Create Temp node
-      const tempFolderNode = new Node(emptyFolder(), [], true);
+      const tempFolderNode = new Node(emptyFolder(), true);
       tempFolderNode.item.id = 'temp';
       tempFolderNode.item.name = 'Temp';
       tempFolderNode.noDrag = true;
@@ -109,16 +108,10 @@ export default {
         temp: tempFolderNode,
       };
       rootGetters['folder/items'].forEach((item) => {
-        nodeMap[item.id] = new Node(item, [], true);
+        nodeMap[item.id] = new Node(item, true);
       });
-      const syncLocationsByFileId = rootGetters['syncLocation/filteredGroupedByFileId'];
-      const publishLocationsByFileId = rootGetters['publishLocation/filteredGroupedByFileId'];
       rootGetters['file/items'].forEach((item) => {
-        const locations = [
-          ...syncLocationsByFileId[item.id] || [],
-          ...publishLocationsByFileId[item.id] || [],
-        ];
-        nodeMap[item.id] = new Node(item, locations);
+        nodeMap[item.id] = new Node(item);
       });
 
       // Build the tree

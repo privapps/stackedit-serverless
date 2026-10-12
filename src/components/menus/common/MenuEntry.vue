@@ -13,6 +13,7 @@
 @import '../../../styles/variables.scss';
 
 .menu-entry {
+  min-height: 44px;
   text-align: left;
   padding: 10px;
   height: auto;
@@ -44,10 +45,24 @@
 }
 
 .menu-entry__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 20px;
   width: 20px;
   margin-right: 12px;
   flex: none;
+
+  > * {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+}
+
+.menu-entry:focus-visible {
+  outline: 3px solid #1681d4;
+  outline-offset: -3px;
 }
 
 .menu-entry__icon--disabled {

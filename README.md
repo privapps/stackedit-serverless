@@ -1,41 +1,44 @@
 # StackEdit Serverless
-> A serverless version of [StackEdit](https://github.com/benweet/stackedit)
+
+A static, browser-based Markdown notebook based on [StackEdit](https://github.com/benweet/stackedit).
 
 https://privapps.github.io/stackedit-serverless
 
-## Why
-The last update for [stackedit](https://github.com/benweet/stackedit) was March 2021, and lots of PR were in limbo and not merged. I had a strong feeling that this project might not accessible soon since maintaining a website has expenses. Also, there is a StackEditPro around without source code available, which makes me feel the need to have one up and running in case of losing it.
+## What it does
 
-## What
-This is a fork of StackEdit v5.14.10 . Since I do not have any funding, this project only keeps the UI part of it and is stripped of the server-side. And due to that, the integration with Google Drive, Github, Gitlab, etc. was not functioning anymore, so I hide those from the menu.
+Write and organize Markdown files in local browser workspaces. Changes save to this browser automatically, and the installed or cached application can be used offline. Workspace search finds names and Markdown content across nested folders and unopened notes.
 
-This repository has no server-side component: there is no Node server, Dockerfile, or Helm
-chart to deploy. The only supported release target is the static production build (`npm run
-build`) published to GitHub Pages; see the GitHub Actions workflow in `.github/workflows`.
+Import Markdown and HTML, export individual notes as Markdown or styled HTML with its styles and rendering assets included, print from the browser, and download a workspace backup. Mermaid diagrams, mathematical notation, syntax highlighting, and rich Markdown remain supported.
 
-## Benefit 
-* Use it offline 100%
-* Can backup single notes or the entire workspace to a file, encrypt and save to any cloud as you like (Use your encryption software method as you wish). This maximizes privacy and security.
-* Minimum cost since they are all static pages
+The notebook has no account, cloud sync, publishing, collaboration, or remote-history workflows. Notes stay in the current browser until exported; clearing its site data removes the local copy. Keep a workspace backup somewhere safe.
 
-## How
-Here are ways you can use it
-1. Use the Github page https://privapps.github.io/stackedit-serverless
-2. Local Web Service e.g. \
+## Run the static site
+
+This repository has no backend service. The production build is hosted on GitHub Pages. To serve the published static files locally:
+
 ```bash
 curl -skL https://github.com/privapps/stackedit-serverless/tarball/gh-pages -o ses.tar.gz
-tar xf ses.tar.gz ; cd <folder with docs>
+tar xf ses.tar.gz
+cd <folder-with-docs>
 python3 -m http.server 8010
 ```
 
-## Build
-Built and tested with Node.js 24 LTS and `npm ci` for a reproducible install. A local
-`npm version patch|minor|major` only bumps the version locally (commit + tag); it never
-pushes to a remote or runs `npm publish`. See GitHub Actions for the CI build.
+Then open `http://localhost:8010` in a browser. Links and image URLs authored in notes remain external and may still require an internet connection in the notebook or exported HTML.
 
-## Limitation
-* Due to missing the server-side, integration with third-party applications is stripped.
-* Missing the note search :(
+## Build and test
 
-## Credit
-* [StackEdit](https://github.com/benweet/stackedit)
+Use Node.js 24 LTS and npm 10 or newer:
+
+```bash
+npm ci
+npm run build
+npm run lint
+npm run unit
+npm run browser-smoke
+```
+
+The browser harness serves the real build under a nested path. `npm version patch|minor|major` updates the version locally; it does not push or publish. GitHub Actions builds the static site.
+
+## Credits
+
+- [StackEdit](https://github.com/benweet/stackedit)
