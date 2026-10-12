@@ -356,6 +356,147 @@ describe('WorkspaceSearchPanel.vue', () => {
     }
   });
 
+  it('keeps the popup in place when selected results do not overlap it', () => {
+    let selectionRect = { left: 100, right: 200, top: 700, bottom: 720, height: 20 };
+    const selection = {
+      rangeCount: 1,
+      getRangeAt: () => ({ getBoundingClientRect: () => selectionRect }),
+    };
+    const getSelection = vi.spyOn(window, 'getSelection').mockReturnValue(selection);
+    const wrapper = specUtils.shallowMount(WorkspaceSearchPanel);
+    const popup = wrapper.find('.workspace-search').element;
+    const getPopupRect = vi.spyOn(popup, 'getBoundingClientRect').mockReturnValue({
+      left: 1000,
+      right: 1360,
+      top: 42,
+      bottom: 432,
+      height: 390,
+    });
+
+    try {
+      wrapper.vm.placePanelAwayFromSelection();
+      expect(wrapper.vm.panelPlacement).toBe('initial');
+
+      selectionRect = { left: 100, right: 200, top: 58, bottom: 78, height: 20 };
+      wrapper.vm.placePanelAwayFromSelection();
+      expect(wrapper.vm.panelPlacement).toBe('initial');
+    } finally {
+      getPopupRect.mockRestore();
+      getSelection.mockRestore();
+      wrapper.unmount();
+    }
+  });
+
+  it('constrains the popup when both placements would cover the selected match', async () => {
+    const selection = {
+      rangeCount: 1,
+      getRangeAt: () => ({
+        getBoundingClientRect: () => ({
+          left: 850,
+          right: 900,
+          top: 430,
+          bottom: 450,
+          height: 20,
+        }),
+      }),
+    };
+    const getSelection = vi.spyOn(window, 'getSelection').mockReturnValue(selection);
+    const innerWidth = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1200);
+    const innerHeight = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(905);
+    const wrapper = specUtils.shallowMount(WorkspaceSearchPanel);
+    const popup = wrapper.find('.workspace-search').element;
+    const getPopupRect = vi.spyOn(popup, 'getBoundingClientRect').mockReturnValue({
+      left: 800,
+      right: 1160,
+      top: 42,
+      bottom: 527,
+      height: 485,
+    });
+
+    try {
+      wrapper.vm.placePanelAwayFromSelection();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.vm.panelPlacement).toBe('bottom');
+      expect(wrapper.vm.panelMaxHeight).toBe('443px');
+      expect(popup.style.maxHeight).toBe('443px');
+    } finally {
+      getPopupRect.mockRestore();
+      wrapper.unmount();
+      innerHeight.mockRestore();
+      innerWidth.mockRestore();
+      getSelection.mockRestore();
+    }
+  });
+
+  it('recalculates a constrained popup after the viewport shrinks', async () => {
+    const selection = {
+      rangeCount: 1,
+      getRangeAt: () => ({
+        getBoundingClientRect: () => {
+          const isMobile = window.innerWidth <= 1059;
+          return {
+            left: isMobile ? 100 : 850,
+            right: isMobile ? 200 : 900,
+            top: isMobile ? 250 : 430,
+            bottom: isMobile ? 270 : 450,
+            height: 20,
+          };
+        },
+      }),
+    };
+    const getSelection = vi.spyOn(window, 'getSelection').mockReturnValue(selection);
+    const innerWidth = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1200);
+    const innerHeight = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(905);
+    const wrapper = specUtils.shallowMount(WorkspaceSearchPanel);
+    const popup = wrapper.find('.workspace-search').element;
+    const getPopupRect = vi.spyOn(popup, 'getBoundingClientRect').mockImplementation(() => {
+      const isMobile = window.innerWidth <= 1059;
+      const topMargin = isMobile ? 8 : 42;
+      const bottomMargin = isMobile ? 8 : 12;
+      const maxHeight = Math.min(
+        window.innerHeight * (isMobile ? 0.45 : 0.55) - 12,
+        window.innerHeight - 24,
+      );
+      const height = popup.style.maxHeight ? parseFloat(popup.style.maxHeight) : maxHeight;
+      const isTop = wrapper.vm.panelPlacement === 'top'
+        || (wrapper.vm.panelPlacement === 'initial' && !isMobile);
+      const top = isTop ? topMargin : window.innerHeight - bottomMargin - height;
+      return {
+        left: isMobile ? 8 : 800,
+        right: isMobile ? 382 : 1160,
+        top,
+        bottom: top + height,
+        height,
+      };
+    });
+
+    try {
+      wrapper.vm.placePanelAwayFromSelection();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.vm.panelMaxHeight).toBe('443px');
+
+      innerWidth.mockReturnValue(390);
+      innerHeight.mockReturnValue(390);
+      window.dispatchEvent(new Event('resize'));
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+
+      expect(popup.style.maxHeight).toBe('');
+      expect(wrapper.vm.panelPlacement).toBe('top');
+      const resizedPanel = popup.getBoundingClientRect();
+      expect(resizedPanel.top).toBeGreaterThanOrEqual(0);
+      expect(resizedPanel.bottom).toBeLessThanOrEqual(390);
+      expect(resizedPanel.bottom).toBeLessThanOrEqual(250);
+    } finally {
+      getPopupRect.mockRestore();
+      wrapper.unmount();
+      innerHeight.mockRestore();
+      innerWidth.mockRestore();
+      getSelection.mockRestore();
+    }
+  });
+
   it('closes with Escape after result activation moves focus into the editor', async () => {
     const file = await workspaceSvc.createFile({
       name: 'escape-after-activation.md',
@@ -369,13 +510,16 @@ describe('WorkspaceSearchPanel.vue', () => {
     });
     editorSvc.clEditor = { getContent: () => 'needle in the document\n' };
     const wrapper = specUtils.shallowMount(WorkspaceSearchPanel);
+    const result = {
+      ...makeResult(file.id, 'needle'),
+      contentMatch: { start: 0, end: 6 },
+    };
+    wrapper.vm.results = [result];
 
     try {
-      await wrapper.vm.activateResult({
-        ...makeResult(file.id, 'needle'),
-        contentMatch: { start: 0, end: 6 },
-      });
+      await wrapper.vm.activateResult(result);
       expect(document.activeElement).toBe(editor);
+      expect(wrapper.find('.workspace-search__result').attributes('aria-current')).toBe('true');
 
       editor.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Escape',

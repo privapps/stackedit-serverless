@@ -66,6 +66,15 @@ const dragAndDrop = async (sourceItem, targetItem) => {
 describe('ExplorerNode.vue', () => {
   const modifiedName = 'Name';
 
+  it('does not render an edit input for the root node when no item is being edited', () => {
+    store.commit('explorer/setEditingId', null);
+    const wrapper = mount(store.getters['explorer/rootNode']);
+
+    expect(wrapper.find('.explorer-node__item-editor').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
   it('should open file on select after a timeout', async () => {
     const node = await makeFileNode();
     await mountAndSelect(node);

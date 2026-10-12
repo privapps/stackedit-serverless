@@ -39,7 +39,7 @@ export default {
       return store.state.explorer.selectedId === this.node.item.id;
     },
     isEditing() {
-      return store.state.explorer.editingId === this.node.item.id;
+      return !this.node.isRoot && store.state.explorer.editingId === this.node.item.id;
     },
     isDragTarget() {
       return store.state.explorer.dragTargetId === this.node.item.id;

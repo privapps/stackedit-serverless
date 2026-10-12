@@ -3,6 +3,7 @@
     <section
       class="workspace-search"
       :class="`workspace-search--${panelPlacement}`"
+      :style="panelMaxHeight ? { maxHeight: panelMaxHeight } : null"
       role="dialog"
       aria-label="Search workspace"
     >
@@ -58,7 +59,13 @@
 
       <ul v-if="results.length" class="workspace-search__results" aria-label="Search results">
         <li v-for="result in results" :key="result.fileId">
-          <button class="workspace-search__result button" type="button" @click="activateResult(result)">
+          <button
+            class="workspace-search__result button"
+            :class="{ 'workspace-search__result--active': activeResultId === result.fileId }"
+            :aria-current="activeResultId === result.fileId ? 'true' : null"
+            type="button"
+            @click="activateResult(result)"
+          >
             <span class="workspace-search__result-name">
               <template v-if="result.nameMatch">
                 {{result.name.slice(0, result.nameMatch.start)}}<mark>{{result.name.slice(result.nameMatch.start, result.nameMatch.end)}}</mark>{{result.name.slice(result.nameMatch.end)}}
@@ -109,8 +116,10 @@ export default {
     searchContent: true,
     caseSensitive: false,
     results: [],
+    activeResultId: null,
     status: 'initial',
     message: '',
+    panelMaxHeight: null,
     requestId: 0,
     activationId: 0,
     activeScan: null,
@@ -135,9 +144,11 @@ export default {
     async submit() {
       this.invalidateSearch();
       this.panelPlacement = 'initial';
+      this.panelMaxHeight = null;
       const requestId = this.requestId;
       const workspaceId = this.workspaceId;
       this.results = [];
+      this.activeResultId = null;
       this.message = '';
       if (!this.query) {
         this.status = 'initial';
@@ -181,11 +192,13 @@ export default {
     reset() {
       this.invalidateSearch();
       this.panelPlacement = 'initial';
+      this.panelMaxHeight = null;
       this.query = '';
       this.searchName = true;
       this.searchContent = true;
       this.caseSensitive = false;
       this.results = [];
+      this.activeResultId = null;
       this.status = 'initial';
       this.message = '';
       this.$nextTick(() => this.$refs.queryInput && this.$refs.queryInput.focus());
@@ -194,6 +207,7 @@ export default {
       this.invalidateSearch();
       this.isOpen = false;
       window.removeEventListener('keydown', this.handleWindowKeydown, true);
+      window.removeEventListener('resize', this.handleViewportResize);
       this.$emit('close');
     },
     handleWindowKeydown(event) {
@@ -203,7 +217,16 @@ export default {
         this.close();
       }
     },
+    handleViewportResize() {
+      this.panelMaxHeight = null;
+      this.$nextTick(() => {
+        if (this.isOpen) {
+          this.placePanelAwayFromSelection();
+        }
+      });
+    },
     reportStaleResult() {
+      this.activeResultId = null;
       this.status = 'validation';
       this.message = 'This result has changed. Search again to refresh it.';
     },
@@ -217,9 +240,27 @@ export default {
         return;
       }
       const match = range.getBoundingClientRect();
-      this.panelPlacement = match.top + (match.height / 2) < window.innerHeight / 2
-        ? 'bottom'
-        : 'top';
+      const popup = this.$el.querySelector('.workspace-search');
+      if (!popup) {
+        return;
+      }
+      const panel = popup.getBoundingClientRect();
+      if (
+        match.left >= panel.right
+        || match.right <= panel.left
+        || match.top >= panel.bottom
+        || match.bottom <= panel.top
+      ) {
+        return;
+      }
+      const isMobile = window.innerWidth <= 1059;
+      const spaceAbove = Math.max(0, match.top - (isMobile ? 8 : 42));
+      const spaceBelow = Math.max(0, window.innerHeight - match.bottom - (isMobile ? 8 : 12));
+      const availableSpace = Math.max(spaceAbove, spaceBelow);
+      this.panelPlacement = spaceAbove > spaceBelow ? 'top' : 'bottom';
+      if (panel.height > availableSpace) {
+        this.panelMaxHeight = `${availableSpace}px`;
+      }
     },
     async waitForEditorContent(fileId, text, activationId, workspaceId) {
       const targetText = expectedEditorText(text);
@@ -242,6 +283,8 @@ export default {
     },
     async activateResult(result) {
       const activationId = ++this.activationId;
+      this.activeResultId = null;
+      this.panelMaxHeight = null;
       const workspaceId = result.workspaceId;
       if (workspaceId !== this.workspaceId) {
         this.reportStaleResult();
@@ -340,11 +383,14 @@ export default {
         result.caseSensitive,
       )) {
         this.reportStaleResult();
+        return;
       }
+      this.activeResultId = file.id;
     },
   },
   mounted() {
     window.addEventListener('keydown', this.handleWindowKeydown, true);
+    window.addEventListener('resize', this.handleViewportResize);
   },
   created() {
     this.$watch(
@@ -352,6 +398,8 @@ export default {
       () => {
         this.invalidateSearch();
         this.results = [];
+        this.activeResultId = null;
+        this.panelMaxHeight = null;
         this.status = 'initial';
         this.message = '';
       },
@@ -360,6 +408,7 @@ export default {
   beforeDestroy() {
     this.isOpen = false;
     window.removeEventListener('keydown', this.handleWindowKeydown, true);
+    window.removeEventListener('resize', this.handleViewportResize);
     this.activationId += 1;
     this.invalidateSearch();
   },
@@ -385,8 +434,8 @@ export default {
   right: calc(var(--workspace-search-sidebar-offset) + 12px);
   width: 360px;
   max-width: calc(100vw - var(--workspace-search-sidebar-offset) - 24px);
-  max-height: min(calc(45vh - 12px), calc(100vh - 24px));
-  max-height: min(calc(45dvh - 12px), calc(100dvh - 24px));
+  max-height: min(calc(55vh - 12px), calc(100vh - 24px));
+  max-height: min(calc(55dvh - 12px), calc(100dvh - 24px));
   overflow: auto;
   padding: 12px 14px;
   border: 1px solid #686868;
@@ -551,6 +600,16 @@ export default {
   overflow-wrap: anywhere;
 }
 
+.workspace-search .workspace-search__result--active {
+  background-color: rgb(18 129 212 / 12%);
+  box-shadow: inset 3px 0 #1281d4;
+}
+
+.app--dark .workspace-search .workspace-search__result--active {
+  background-color: rgb(139 199 255 / 12%);
+  box-shadow: inset 3px 0 #8bc7ff;
+}
+
 .workspace-search__result-name {
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -582,6 +641,8 @@ export default {
     left: 8px;
     width: auto;
     max-width: none;
+    max-height: min(calc(45vh - 12px), calc(100vh - 24px));
+    max-height: min(calc(45dvh - 12px), calc(100dvh - 24px));
   }
 
   .workspace-search--top {
