@@ -1966,11 +1966,30 @@ async function main() {
         tx: 3,
       },
       {
-        id: 'lastOpened',
-        type: 'data',
-        data: { 'main-legacy-file': Date.now() },
+        id: 'main-legacy-initial-file',
+        type: 'file',
+        name: 'main-legacy-initial.md',
+        parentId: null,
         hash: 34,
         tx: 4,
+      },
+      {
+        id: 'main-legacy-initial-file/content',
+        type: 'content',
+        text: '# Main initial note\n\nMAIN_INITIAL_CONTENT_MARKER',
+        properties: '',
+        discussions: {},
+        comments: {},
+        history: [],
+        hash: 35,
+        tx: 5,
+      },
+      {
+        id: 'lastOpened',
+        type: 'data',
+        data: { 'main-legacy-initial-file': Date.now() },
+        hash: 36,
+        tx: 6,
       },
     ]);
     await seedLegacyWorkspaceRecords(legacyMainPage);
@@ -1979,6 +1998,11 @@ async function main() {
       state: 'visible',
       timeout: 20_000,
     });
+    assert.notEqual(
+      await legacyMainPage.locator('.navigation-bar__title--input').inputValue(),
+      'main-legacy-note.md',
+      'The legacy note is opened through the explorer rather than restored on reload',
+    );
     await ensureExplorerVisible(legacyMainPage);
     const mainArchiveRow = legacyMainPage.locator('.explorer-node__item')
       .filter({ hasText: 'Main Archive' });
@@ -1987,11 +2011,7 @@ async function main() {
     const mainLegacyNoteRow = legacyMainPage.locator('.explorer-node__item')
       .filter({ hasText: 'main-legacy-note.md' });
     await mainLegacyNoteRow.waitFor({ state: 'visible' });
-    await legacyMainPage.evaluate(() => {
-      [...document.querySelectorAll('.explorer-node__item')]
-        .find(item => item.textContent.trim() === 'main-legacy-note.md')
-        ?.click();
-    });
+    await mainLegacyNoteRow.click();
     await legacyMainPage.waitForFunction(
       () => document.querySelector('.editor__inner')?.textContent.includes('MAIN_LEGACY_CONTENT_MARKER'),
       undefined,
