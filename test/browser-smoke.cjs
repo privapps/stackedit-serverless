@@ -1976,11 +1976,10 @@ async function main() {
       'main-legacy-note.md',
     );
     await ensureExplorerVisible(legacyMainPage);
+    await mainArchiveRow.waitFor({ state: 'visible' });
     await mainLegacyNoteRow.waitFor({ state: 'visible' });
-    assert.equal(await legacyMainPage.locator('.explorer-node__item')
-      .filter({ hasText: 'Main Archive' }).count(), 1);
-    assert.equal(await legacyMainPage.locator('.explorer-node__item')
-      .filter({ hasText: 'main-legacy-note.md' }).count(), 1);
+    assert.equal(await mainArchiveRow.count(), 1);
+    assert.equal(await mainLegacyNoteRow.count(), 1);
     const legacyMainItems = await legacyMainPage.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
         const request = indexedDB.open('stackedit-db');
